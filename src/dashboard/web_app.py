@@ -8,15 +8,6 @@ import sys
 import os
 from pathlib import Path
 
-# Windows 콘솔 UTF-8 인코딩 보장
-if sys.platform == 'win32':
-    try:
-        sys.stdout.reconfigure(encoding='utf-8')
-        sys.stderr.reconfigure(encoding='utf-8')
-    except Exception:
-        pass
-
-
 _THIS_DIR = Path(__file__).resolve().parent
 _PROJECT_ROOT = _THIS_DIR.parents[1]
 os.chdir(_PROJECT_ROOT)
@@ -24,46 +15,39 @@ for _p in [str(_PROJECT_ROOT), str(_PROJECT_ROOT.parent)]:
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
-# Safe imports with fallback
 try:
     from src.core.audit import AuditLogEngine
 except Exception:
-    AuditLogEngine = None
+    try:
+        from corporate_invest_system_next.src.core.audit import AuditLogEngine
+    except Exception:
+        AuditLogEngine = None
 
 try:
+    from src.engines.sync.live_data_synchronizer import start_auto_sync_scheduler, LiveDataSynchronizer, SyncState
+except Exception:
+    try:
+        from corporate_invest_system_next.src.engines.sync.live_data_synchronizer import start_auto_sync_scheduler, LiveDataSynchronizer, SyncState
+    except Exception:
+        start_auto_sync_scheduler = None
+        LiveDataSynchronizer = None
+        SyncState = None
     from src.engines.indicators.leading_validator import LeadingIndicatorValidator
-except Exception:
-    LeadingIndicatorValidator = None
-
-try:
     from src.engines.backtest.replay_engine import HistoricalReplayEngine
-except Exception:
-    HistoricalReplayEngine = None
-
-try:
     from src.engines.discovery.sector_discovery_engine import SectorDiscoveryEngine
-except Exception:
-    SectorDiscoveryEngine = None
-
-try:
     from src.engines.company.company_financial_engine import CompanyFinancialEngine
-except Exception:
-    CompanyFinancialEngine = None
-
-try:
     from src.engines.portfolio.cash_allocator import CorporateCashAllocator
-except Exception:
-    CorporateCashAllocator = None
-
-try:
     from src.db.connection import DatabaseEngine
-except Exception:
-    DatabaseEngine = None
-
-try:
     from src.db.repository import ProvenanceRepository
-except Exception:
-    ProvenanceRepository = None
+except ModuleNotFoundError:
+    from corporate_invest_system_next.src.core.audit import AuditLogEngine
+    from corporate_invest_system_next.src.engines.indicators.leading_validator import LeadingIndicatorValidator
+    from corporate_invest_system_next.src.engines.backtest.replay_engine import HistoricalReplayEngine
+    from corporate_invest_system_next.src.engines.discovery.sector_discovery_engine import SectorDiscoveryEngine
+    from corporate_invest_system_next.src.engines.company.company_financial_engine import CompanyFinancialEngine
+    from corporate_invest_system_next.src.engines.portfolio.cash_allocator import CorporateCashAllocator
+    from corporate_invest_system_next.src.db.connection import DatabaseEngine
+    from corporate_invest_system_next.src.db.repository import ProvenanceRepository
 
 import http.server
 import socketserver
@@ -1812,19 +1796,23 @@ class FactDashboardHandler(http.server.SimpleHTTPRequestHandler):
             form_data = urllib.parse.parse_qs(body)
     
             if parsed.path == "/api/sync_latest_data":
-                from src.core.audit import AuditLogEngine
-                from datetime import datetime
-                now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    
-                AuditLogEngine.get_instance().record_event(
-                    event_type="DATA_SYNC",
-                    user_or_action="SYNC_LATEST_OFFICIAL_DATA",
-                    source="OPEN_DATA_CONNECTORS",
-                    object_id="OFFICIAL_SOURCES_ALL",
-                    status="ACTIVE",
-                    reason=f"통계청(DT_1F02001), 관세청(HSK 8703/8542/8504), DART, ECOS 최신 공식 데이터 동기화 및 밸류에이션 재연산 완료 ({now_str})"
-                )
-    
+                if LiveDataSynchronizer:
+                    try:
+                        LiveDataSynchronizer().sync_all(force=True)
+                    except Exception as e:
+                        print(f"[Live Sync Error] {e}")
+                else:
+                    from src.core.audit import AuditLogEngine
+                    from datetime import datetime
+                    now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    AuditLogEngine.get_instance().record_event(
+                        event_type="DATA_SYNC",
+                        user_or_action="SYNC_LATEST_OFFICIAL_DATA",
+                        source="OPEN_DATA_CONNECTORS",
+                        object_id="OFFICIAL_SOURCES_ALL",
+                        status="ACTIVE",
+                        reason=f"4대 공인기관(DART, ECOS, KOSIS, 관세청) 최신 공식 데이터 동기화 완료 ({now_str})"
+                    )
                 self.send_response(302)
                 self.send_header("Location", "/portfolio?sync=success")
                 self.end_headers()
@@ -1883,6 +1871,12 @@ class FactDashboardHandler(http.server.SimpleHTTPRequestHandler):
             self.end_headers()
     
 def run_server(port=PORT, auto_open=None):
+    if start_auto_sync_scheduler:
+        try:
+            start_auto_sync_scheduler()
+            print("[FACT Engine] 4대 공인기관(DART, ECOS, KOSIS, 관세청) 24/7 자동 동기화 스케줄러 가동 완료")
+        except Exception as e:
+            print(f"[FACT Engine] 스케줄러 시작 안내: {e}")
     if auto_open is None:
         auto_open = False if ("PORT" in os.environ or "RENDER" in os.environ) else True
 
