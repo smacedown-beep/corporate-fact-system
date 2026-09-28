@@ -1,0 +1,8 @@
+services:
+  - type: web
+    name: corporate-invest-fact-system
+    env: python
+    region: singapore
+    plan: free
+    buildCommand: "pip install -r requirements.txt || true"
+    startCommand: "python src/dashboard/web_app.py"

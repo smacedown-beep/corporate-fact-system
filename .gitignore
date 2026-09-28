@@ -1,0 +1,54 @@
+# Security & Credentials - 절대 Git에 포함 금지
+.env
+.env.*
+*.key
+*.pem
+*.secret
+secrets/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Testing & Coverage
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+
+# Local Evidence Storage (Only sample fixtures tracked)
+storage/raw_evidence/*
+!storage/raw_evidence/.gitkeep
+
+# Operating System
+.DS_Store
+Thumbs.db
+desktop.ini
