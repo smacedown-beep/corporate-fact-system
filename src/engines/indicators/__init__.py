@@ -1,0 +1,1 @@
+"""Leading indicator validation module."""
