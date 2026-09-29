@@ -1237,6 +1237,11 @@ def render_screen_portfolio(sync_success: bool = False) -> str:
             <div class="val" style="color:var(--warning);font-size:20px;">2차전지 / 배터리 소재</div>
             <div class="sub">수출단가 하락 및 선행지표 유효성 미확보로 신규 투자 보류</div>
         </div>
+        <div class="card" style="border-left:4px solid var(--fail);background:rgba(239, 68, 68, 0.05);">
+            <h3>보유 시 매도 / 하락 경보 상태 <span class="tag tag-fact">리스크 관리</span></h3>
+            <div class="val" style="color:var(--fail);font-size:20px;">2개 섹터 하락/매도 경보</div>
+            <div class="sub">철강(50% 비중축소) · 2차전지(전량매도 EXIT) | 주도주 4종 보유유지</div>
+        </div>
     </div>
 
     <!-- 핵심 1: 섹터 및 종목별 투자 적합도 종합 평가표 -->
@@ -1255,6 +1260,7 @@ def render_screen_portfolio(sync_success: bool = False) -> str:
                     <th>예상 수익률 (목표 달성 기간: 1년~2년)</th>
                     <th>밸류에이션 매력도</th>
                     <th>핵심 투자 포인트 및 리스크</th>
+                    <th style="color:var(--warning);">보유 시 매도 판단 / 하락 경보</th>
                 </tr>
             </thead>
             <tbody>
@@ -1279,6 +1285,13 @@ def render_screen_portfolio(sync_success: bool = False) -> str:
                     </td>
                     <td>- PER 8.0배<br>- 영업이익률 26.0% 급반등</td>
                     <td>- 엔비디아 HBM3E 독점적 지위<br>- [주의] AI CapEx 집행 속도</td>
+                    <td>
+                        <span class="status-badge badge-pass" style="font-size:11px;">보유 유지 (HOLD)</span><br>
+                        <span style="font-size:11px;color:var(--text-dim);line-height:1.4;display:inline-block;margin-top:4px;">
+                            • 1차 익절(20%): HSK 8542 수출 2개월 연속 -5% 하락 시<br>
+                            • 전량 매도: 반도체 재고순환선 음전환(0%p 하회) 시
+                        </span>
+                    </td>
                 </tr>
 
                 <tr style="background:rgba(245, 158, 11, 0.04);">
@@ -1302,6 +1315,13 @@ def render_screen_portfolio(sync_success: bool = False) -> str:
                     </td>
                     <td>- 2027년까지 수주 완판<br>- 영업이익률 19.7%</td>
                     <td>- AI 데이터센터 전력 슈퍼사이클<br>- [주의] 구리 원자재 가격</td>
+                    <td>
+                        <span class="status-badge badge-warn" style="font-size:11px;color:#f59e0b;border:1px solid rgba(245,158,11,0.3);background:rgba(245,158,11,0.15);">차익 실현 경계 (TRIM 20%)</span><br>
+                        <span style="font-size:11px;color:var(--text-dim);line-height:1.4;display:inline-block;margin-top:4px;">
+                            • 1차 익절(30%): PER 18배 초과 과열 또는 수주 둔화 시<br>
+                            • 전량 매도: 구리가격 폭등으로 영업이익률 12% 붕괴 시
+                        </span>
+                    </td>
                 </tr>
 
                 <tr style="background:rgba(14, 165, 233, 0.04);">
@@ -1325,6 +1345,13 @@ def render_screen_portfolio(sync_success: bool = False) -> str:
                     </td>
                     <td>- LNG선 고선가 인도 본격화<br>- 영업이익 흑자 턴어라운드</td>
                     <td>- 친환경 이중연료 선박 독점력<br>- [주의] 후판 가격 및 인건비</td>
+                    <td>
+                        <span class="status-badge badge-pass" style="font-size:11px;">보유 유지 (HOLD)</span><br>
+                        <span style="font-size:11px;color:var(--text-dim);line-height:1.4;display:inline-block;margin-top:4px;">
+                            • 1차 축소(30%): 신조선가지수 185p 붕괴 및 후판가 급등 시<br>
+                            • 전량 매도: 조선류 통관 지연 및 영업이익 적자 반전 시
+                        </span>
+                    </td>
                 </tr>
 
                 <tr style="background:rgba(16, 185, 129, 0.04);">
@@ -1348,6 +1375,13 @@ def render_screen_portfolio(sync_success: bool = False) -> str:
                     </td>
                     <td>- <strong>PER 5.2배, PBR 0.62배</strong><br>- 배당수익률 5.4% 극저평가</td>
                     <td>- 하이브리드 고수익 차종 호조<br>- [주의] 주요국 관세 및 보조금</td>
+                    <td>
+                        <span class="status-badge badge-pass" style="font-size:11px;">보유 유지 (HOLD)</span><br>
+                        <span style="font-size:11px;color:var(--text-dim);line-height:1.4;display:inline-block;margin-top:4px;">
+                            • 1차 축소(50%): 자동차 출하/재고비율 1.0배 미만 급락 시<br>
+                            • 전량 매도: 대미 완성차 관세 인상 현실화 시
+                        </span>
+                    </td>
                 </tr>
 
                 <tr style="background:rgba(168, 85, 247, 0.04);">
@@ -1371,6 +1405,13 @@ def render_screen_portfolio(sync_success: bool = False) -> str:
                     </td>
                     <td>- PER 6.1배, PBR 0.48배<br>- <strong>배당수익률 5.8%</strong></td>
                     <td>- 압도적 주주환원율(자사주 소각)<br>- [주의] 연체율 및 대손충당금</td>
+                    <td>
+                        <span class="status-badge badge-pass" style="font-size:11px;">보유 유지 (HOLD)</span><br>
+                        <span style="font-size:11px;color:var(--text-dim);line-height:1.4;display:inline-block;margin-top:4px;">
+                            • 1차 익절(30%): PBR 0.70배 도달 또는 기준금리 급인하 시<br>
+                            • 전량 매도: 연체율 급등으로 대손충당금 전년비 +30% 시
+                        </span>
+                    </td>
                 </tr>
 
                 <tr style="background:rgba(100, 116, 139, 0.04);">
@@ -1394,6 +1435,13 @@ def render_screen_portfolio(sync_success: bool = False) -> str:
                     </td>
                     <td>- PBR 0.55배 자산가치 방어<br>- 리튬 신사업 중장기 모멘텀</td>
                     <td>- 중국 부동산 철강 수요 회복 확인<br>- [결론] 턴어라운드 확인 시 진입</td>
+                    <td>
+                        <span class="status-badge badge-fail" style="font-size:11px;color:#ef4444;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.15);">하락 지속 경보 / 비중 축소 (SELL 50%)</span><br>
+                        <span style="font-size:11px;color:var(--text-dim);line-height:1.4;display:inline-block;margin-top:4px;">
+                            • 행동 요령: 보유 시 물량 50% 이상 매도 권고<br>
+                            • 전량 매도: 중국 저가 열연재 유입 및 롤마진 붕괴 지속 시
+                        </span>
+                    </td>
                 </tr>
 
                 <tr style="opacity:0.65;">
@@ -1417,14 +1465,105 @@ def render_screen_portfolio(sync_success: bool = False) -> str:
                     </td>
                     <td>- PER 60배 이상 고평가<br>- 실적 추정치 하향 조정</td>
                     <td>- 전기차 수요 둔화(캐즘) 지속<br>- [결론] 선행지표 반등 전까지 보류</td>
+                    <td>
+                        <span class="status-badge badge-fail" style="font-size:11px;color:#ef4444;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.15);">긴급 하락 경보 / 전량 매도 (SELL EXIT)</span><br>
+                        <span style="font-size:11px;color:var(--text-dim);line-height:1.4;display:inline-block;margin-top:4px;">
+                            • 행동 요령: 보유 잔량 전량 현금화(EXIT)<br>
+                            • 트리거: 양극재 수출단가 하락세 지속 및 재고 누적
+                        </span>
+                    </td>
                 </tr>
             </tbody>
         </table>
     </div>
 
+    
+    <!-- 신설: 보유 종목 긴급 매도(EXIT) 트리거 팩트 조건문 -->
+    <div class="card" style="border-left:4px solid var(--fail);background:rgba(239, 68, 68, 0.03);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <h3 style="color:#fff;font-size:15px;">🚨 2. 보유 종목별 하락 위험 감지 및 자동 매도(EXIT) 트리거 룰 엔진</h3>
+            <span class="status-badge badge-fail" style="font-size:10px;">리스크 통제 가이드</span>
+        </div>
+        <p style="font-size:12px;color:var(--text-dim);margin-bottom:14px;line-height:1.6;">
+            법인자금의 원금 보존과 확정 수익 보호를 위해, 선행 팩트 지표(수출·출하·재고·영업이익률)가 꺾일 때 단계별로 발동되는 <strong>매도 및 위험 회피(Risk-Off) 공식 규칙</strong>입니다. 
+            단순 감이 아닌 계량화된 수치 조건 충족 시 즉각 분할 매도 또는 전량 매도 신호를 표출합니다.
+        </p>
+        <table>
+            <thead>
+                <tr>
+                    <th>분석 대상 종목</th>
+                    <th>현재 포지션 판단</th>
+                    <th>1단계 하락 신호 (20~30% 차익실현)</th>
+                    <th>2단계 하락 신호 (50% 비중 축소)</th>
+                    <th>3단계 긴급 매도 (전량 현금화 / 손절)</th>
+                    <th>감시 중인 원천 팩트 지표</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>SK하이닉스 (000660)</strong><br><span style="font-size:11px;color:var(--text-dim);">AI 반도체</span></td>
+                    <td><span class="status-badge badge-pass">보유 유지 (BUY)</span></td>
+                    <td>관세청 HSK 8542 메모리 수출액 2개월 연속 전월비 -5% 하락 시</td>
+                    <td>통계청 반도체 재고순환선 음전환(0%p 하회) 시</td>
+                    <td>대미 HBM 수출액 전년대비 -15% 급감 또는 영업이익률 15% 붕괴 시</td>
+                    <td>관세청 HSK 8542 / 통계청 C261 재고순환선</td>
+                </tr>
+                <tr>
+                    <td><strong>HD현대일렉트릭 (267250)</strong><br><span style="font-size:11px;color:var(--text-dim);">전력기기</span></td>
+                    <td><span class="status-badge badge-warn" style="color:#f59e0b;">차익실현 경계 (TRIM 20%)</span></td>
+                    <td>PER 18.0배 초과 도달 시 (보유 물량 30% 분할 익절)</td>
+                    <td>관세청 HSK 8504 대미 변압기 수출액 전월비 -15% 둔화 시</td>
+                    <td>런던금속거래소(LME) 구리가격 톤당 1,000 돌파로 마진 붕괴 시</td>
+                    <td>관세청 HSK 8504 / DART 분기 영업이익률</td>
+                </tr>
+                <tr>
+                    <td><strong>HD현대중공업 (329180)</strong><br><span style="font-size:11px;color:var(--text-dim);">조선 플랜트</span></td>
+                    <td><span class="status-badge badge-pass">보유 유지 (BUY)</span></td>
+                    <td>클락슨 신조선가지수 3개월 연속 하락 전환 (185p 붕괴) 시</td>
+                    <td>관세청 HSK 8901 선박류 통관 인도액 전년비 음전환 시</td>
+                    <td>후판가 톤당 100만원 급등으로 조선 부문 분기 적자 반전 시</td>
+                    <td>클락슨 신조선가지수 / 관세청 HSK 8901</td>
+                </tr>
+                <tr>
+                    <td><strong>현대자동차 (005380)</strong><br><span style="font-size:11px;color:var(--text-dim);">완성차·전장</span></td>
+                    <td><span class="status-badge badge-pass">보유 유지 (BUY)</span></td>
+                    <td>통계청 C301 출하/재고 비율 1.0배 미만(재고 누적) 급락 시</td>
+                    <td>관세청 HSK 8703 승용차 수출액 전년대비 음전환 시</td>
+                    <td>미국 관세 인상(20% 이상) 법제화 또는 하이브리드 판매율 급감 시</td>
+                    <td>통계청 DT_1F02001 / 관세청 HSK 8703</td>
+                </tr>
+                <tr>
+                    <td><strong>KB금융 (105560)</strong><br><span style="font-size:11px;color:var(--text-dim);">금융지주</span></td>
+                    <td><span class="status-badge badge-pass">보유 유지 (BUY)</span></td>
+                    <td>PBR 0.70배 도달 시 (목표 밸류에이션 도달로 30% 차익실현)</td>
+                    <td>한국은행 기준금리 급인하(50bp 이상 빅컷)로 순이자마진 붕괴 시</td>
+                    <td>가계·PF 연체율 급등으로 분기 대손충당금 전년비 +30% 이상 폭증 시</td>
+                    <td>한국은행 ECOS 060Y / DART 충당금 전입액</td>
+                </tr>
+                <tr>
+                    <td><strong>POSCO홀딩스 (005490)</strong><br><span style="font-size:11px;color:var(--text-dim);">철강·소재</span></td>
+                    <td><span class="status-badge badge-fail" style="color:#ef4444;">하락 경보 (비중축소 50%)</span></td>
+                    <td>중국 열연 유통가 추가 하락 시 (이미 발동 중: 30% 매도 권고)</td>
+                    <td>관세청 HSK 72 철강 수출 스프레드 톤당 25만원 미만 지속 시 (50% 매도)</td>
+                    <td>중국 부동산 부양 실패 및 리튬 현물가 0/kg 붕괴 시 (전량 매도)</td>
+                    <td>관세청 HSK 72 / 중국 열연 유통가격</td>
+                </tr>
+                <tr style="background:rgba(239, 68, 68, 0.08);">
+                    <td><strong>LG에너지솔루션 (373220)</strong><br><span style="font-size:11px;color:var(--text-dim);">2차전지</span></td>
+                    <td><span class="status-badge badge-fail" style="color:#ef4444;">긴급 전량 매도 (SELL EXIT)</span></td>
+                    <td>전기차 판매 성장률 둔화 (이미 1단계 발동 통과)</td>
+                    <td>양극재 통관 수출단가 하락세 지속 (이미 2단계 발동 통과)</td>
+                    <td><strong>현재 즉시 전량 매도 및 현금화 권고</strong> (수출단가 바닥 미확인)</td>
+                    <td>관세청 HSK 28 / 통계청 배터리 재고지수</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+
     <!-- 핵심 2: 최적 포트폴리오 자산 배분 모델 (비율 % 기준) -->
     <div class="card">
-        <h3>2. 검증된 유망 섹터 중심 최적 포트폴리오 배분 비율 모델 (금액 무관, % 기준)</h3>
+        <h3>3. 검증된 유망 섹터 중심 최적 포트폴리오 배분 비율 모델 (금액 무관, % 기준)</h3>
         <p style="font-size:12px;color:var(--text-dim);margin-bottom:14px;">
             투자 규모와 관계없이 최적의 위험 대비 수익률을 달성할 수 있도록 설계된 2가지 투자 전략 모델입니다.
         </p>
