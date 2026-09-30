@@ -83,7 +83,11 @@ def render_layout(current_route: str, content_html: str) -> str:
             {"route": "audit_log", "num": 13, "label": "시스템 불변 감사 로그", "badge": None},
         ]}
     ]
-    nav_html = ""
+    nav_html = """<div style="margin: 10px 12px 14px 12px;">
+        <a href="/report/a4" target="_blank" style="display: flex; align-items: center; justify-content: center; gap: 8px; background: linear-gradient(135deg, #1d4ed8, #2563eb); color: #ffffff; text-align: center; padding: 10px 12px; border-radius: 6px; font-weight: 800; font-size: 12.5px; text-decoration: none; box-shadow: 0 4px 10px rgba(37,99,235,0.25); border: 1px solid #3b82f6;">
+            <span>🖨️ A4 핵심 요약보고서 인쇄</span>
+        </a>
+    </div>"""
     for group in nav_structure:
         nav_html += f'<div class="nav-category">{group["cat"]}</div>\n'
         for item in group["items"]:
@@ -1869,281 +1873,415 @@ def render_screen_audit_log() -> str:
 
 
 def render_a4_executive_report() -> str:
-    """A4 딱 1장에 완벽하게 들어가는 공문서 규격의 법인 자금 투자 심의 보고서 (완전 동적 실시간 데이터 연동)."""
-    snap = {}
-    if SyncState:
-        try:
-            snap = SyncState.get_snapshot()
-        except Exception:
-            pass
-            
-    val_map = snap.get("stock_valuations", {})
-    
-    sk_per = val_map.get("000660", {}).get("per", 8.0)
-    sk_ret = val_map.get("000660", {}).get("expected_return_range", "연 +22.0% ~ +28.5%")
-    
-    hd_per = val_map.get("267250", {}).get("per", 14.2)
-    hd_ret = val_map.get("267250", {}).get("expected_return_range", "연 +20.0% ~ +25.0%")
-    
-    ship_per = val_map.get("329180", {}).get("per", 18.5)
-    ship_ret = val_map.get("329180", {}).get("expected_return_range", "연 +18.5% ~ +24.0%")
-    
-    hmc_per = val_map.get("005380", {}).get("per", 5.2)
-    hmc_ret = val_map.get("005380", {}).get("expected_return_range", "연 +14.5% ~ +19.0%")
-    
-    kb_per = val_map.get("105560", {}).get("per", 6.1)
-    kb_ret = val_map.get("105560", {}).get("expected_return_range", "연 +12.0% ~ +16.5%")
-    
-    posco_ret = val_map.get("005490", {}).get("expected_return_range", "연 +6.0% ~ +10.5%")
-
-    return f"""<!DOCTYPE html>
+    """사용자가 지정한 규격에 완벽히 맞춘 A4 1장 법인 자금운영 핵심 요약 보고서."""
+    return """<!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <title>법인 자금</title>
-    <style>
-        @page {{
-            size: A4 portrait;
-            margin: 8mm 10mm 8mm 10mm;
-        }}
-        @media print {{
-            .no-print {{ display: none !important; }}
-            body {{ margin: 0; padding: 0; background: #fff !important; }}
-        }}
-        * {{ box-sizing: border-box; margin: 0; padding: 0; }}
-        body {{
-            font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
-            background: #fff;
-            color: #0f172a;
-            padding: 8px 12px;
-            font-size: 11px;
-            line-height: 1.35;
-        }}
-        .title-bar {{
-            text-align: center;
-            border-bottom: 2px solid #0f172a;
-            padding-bottom: 6px;
-            margin-bottom: 10px;
-        }}
-        .title-bar h1 {{
-            font-size: 24px;
-            font-weight: 900;
-            letter-spacing: 4px;
-            color: #0f172a;
-        }}
-        .btn-print {{
-            background: #0284c7;
-            color: #fff;
-            border: none;
-            padding: 7px 16px;
-            font-size: 12px;
-            font-weight: 700;
-            border-radius: 4px;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-block;
-            margin-bottom: 10px;
-        }}
-        .grid-cards {{
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 7px;
-            margin-bottom: 10px;
-        }}
-        .card {{
-            border: 1px solid #cbd5e1;
-            border-radius: 5px;
-            padding: 7px 9px;
-            background: #f8fafc;
-        }}
-        .card h4 {{
-            font-size: 9.5px;
-            color: #64748b;
-            font-weight: 700;
-            margin-bottom: 2px;
-        }}
-        .card .val {{
-            font-size: 12.5px;
-            font-weight: 800;
-            color: #0f172a;
-        }}
-        .card .sub {{
-            font-size: 9px;
-            color: #475569;
-            margin-top: 1px;
-        }}
-        table {{
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 9px;
-            font-size: 9.5px;
-        }}
-        th, td {{
-            border: 1px solid #cbd5e1;
-            padding: 4.5px 6px;
-            text-align: left;
-            vertical-align: middle;
-        }}
-        th {{
-            background: #f1f5f9;
-            color: #1e293b;
-            font-weight: 700;
-            font-size: 9.5px;
-        }}
-        .badge {{
-            display: inline-block;
-            padding: 1px 4px;
-            border-radius: 3px;
-            font-size: 8.5px;
-            font-weight: 700;
-        }}
-        .badge-buy {{ background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }}
-        .badge-trim {{ background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }}
-        .badge-sell {{ background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }}
-        .section-title {{
-            font-size: 11.5px;
-            font-weight: 800;
-            color: #0f172a;
-            margin-bottom: 4px;
-        }}
-        .box-rules {{
-            border: 1px solid #cbd5e1;
-            border-radius: 5px;
-            padding: 7px 9px;
-            background: #f8fafc;
-            margin-bottom: 7px;
-            font-size: 9.5px;
-            line-height: 1.45;
-        }}
-        .footer-note {{
-            font-size: 8.5px;
-            color: #64748b;
-            border-top: 1px solid #e2e8f0;
-            padding-top: 5px;
-            text-align: center;
-        }}
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>법인 자금운영 핵심 요약 보고서</title>
+<style>
+  @page {
+    size: A4 portrait;
+    margin: 8mm 10mm;
+  }
+  
+  * {
+    box-sizing: border-box;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Malgun Gothic", "맑은 고딕", "Apple SD Gothic Neo", sans-serif;
+    color: #1e293b;
+    background-color: #f1f5f9;
+    margin: 0;
+    padding: 15px;
+    font-size: 11px;
+    line-height: 1.35;
+  }
+
+  .no-print-bar {
+    max-width: 210mm;
+    margin: 0 auto 12px auto;
+    background: #0f172a;
+    color: #ffffff;
+    padding: 10px 18px;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+  }
+
+  .print-btn {
+    background: #2563eb;
+    color: #ffffff;
+    border: none;
+    padding: 9px 20px;
+    font-size: 13px;
+    font-weight: bold;
+    border-radius: 6px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.2s;
+  }
+
+  .print-btn:hover {
+    background: #1d4ed8;
+  }
+
+  .a4-container {
+    width: 210mm;
+    min-height: 297mm;
+    margin: 0 auto;
+    background: #ffffff;
+    padding: 10mm 12mm;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  /* Header */
+  .header-bar {
+    background: #0f172a;
+    color: #ffffff;
+    padding: 14px 18px;
+    border-radius: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  .header-title {
+    font-size: 19px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    margin: 0;
+  }
+
+  .header-tag {
+    font-size: 10.5px;
+    color: #94a3b8;
+    font-weight: 500;
+  }
+
+  /* 4 KPI Cards */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .kpi-card {
+    border-radius: 6px;
+    padding: 10px 12px;
+    border: 1.2px solid #cbd5e1;
+  }
+
+  .kpi-card.c1 { background: #eff6ff; border-color: #93c5fd; }
+  .kpi-card.c2 { background: #f0fdf4; border-color: #86efac; }
+  .kpi-card.c3 { background: #fefce8; border-color: #fde047; }
+  .kpi-card.c4 { background: #fef2f2; border-color: #fca5a5; }
+
+  .kpi-label {
+    font-size: 9px;
+    font-weight: bold;
+    color: #64748b;
+    margin-bottom: 4px;
+  }
+
+  .kpi-val {
+    font-size: 12px;
+    font-weight: 800;
+    margin-bottom: 2px;
+  }
+  .c1 .kpi-val { color: #1d4ed8; }
+  .c2 .kpi-val { color: #15803d; }
+  .c3 .kpi-val { color: #a16207; }
+  .c4 .kpi-val { color: #b91c1c; }
+
+  .kpi-sub {
+    font-size: 8.5px;
+    color: #475569;
+  }
+
+  /* Section Title */
+  .section-title {
+    font-size: 12.5px;
+    font-weight: 800;
+    color: #0f172a;
+    border-bottom: 1.5px solid #cbd5e1;
+    padding-bottom: 5px;
+    margin: 0 0 8px 0;
+  }
+
+  /* Table */
+  table.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 14px;
+  }
+
+  table.data-table th {
+    background: #f8fafc;
+    color: #334155;
+    font-size: 9px;
+    font-weight: 800;
+    text-align: left;
+    padding: 6px 8px;
+    border-top: 1px solid #cbd5e1;
+    border-bottom: 1px solid #cbd5e1;
+  }
+
+  table.data-table td {
+    padding: 7px 8px;
+    border-bottom: 1px solid #e2e8f0;
+    vertical-align: middle;
+    font-size: 9px;
+  }
+
+  table.data-table tr:nth-child(even) td {
+    background: #fafcff;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 8.5px;
+    font-weight: 800;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  .badge-buy { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
+  .badge-fit { background: #eff6ff; color: #1d4ed8; border: 1px solid #93c5fd; }
+  .badge-hold { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
+  .badge-avoid { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
+
+  .text-danger { color: #b91c1c; font-weight: bold; }
+  .text-success { color: #15803d; font-weight: bold; }
+
+  /* Section 2 Principles */
+  .principles-box {
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 10px 14px;
+    margin-bottom: 12px;
+  }
+
+  .principle-item {
+    margin-bottom: 7px;
+  }
+  .principle-item:last-child {
+    margin-bottom: 0;
+  }
+
+  .principle-title {
+    font-size: 9.5px;
+    font-weight: 800;
+    color: #0f172a;
+    display: inline-block;
+    margin-right: 6px;
+  }
+
+  .principle-desc {
+    font-size: 9px;
+    color: #334155;
+    line-height: 1.45;
+  }
+
+  /* Footer */
+  .report-footer {
+    border-top: 1px solid #e2e8f0;
+    padding-top: 8px;
+    text-align: center;
+  }
+
+  .footer-note {
+    font-size: 8px;
+    color: #64748b;
+    margin-bottom: 2px;
+  }
+
+  .footer-sub {
+    font-size: 7.5px;
+    color: #94a3b8;
+  }
+
+  /* Print Styles */
+  @media print {
+    body {
+      background: none;
+      padding: 0;
+    }
+    .no-print-bar {
+      display: none !important;
+    }
+    .a4-container {
+      width: 100% !important;
+      min-height: auto !important;
+      padding: 0 !important;
+      box-shadow: none !important;
+    }
+  }
+</style>
 </head>
 <body>
-    <div class="no-print" style="display:flex;justify-content:flex-end;margin-bottom:6px;">
-        <button class="btn-print" onclick="window.print();">🖨️ A4 1장 인쇄 / PDF 저장</button>
+
+<div class="no-print-bar">
+  <div>
+    <strong>📄 법인 자금운영 핵심 요약 보고서 (A4 1장 규격)</strong>
+    <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">
+      * 버튼을 누르면 인쇄 미리보기가 열립니다. 'PDF로 저장'을 선택하시면 PDF 파일로 바로 보관하실 수 있습니다.
     </div>
-    
-    <div class="title-bar">
-        <h1>법인 자금</h1>
+  </div>
+  <button class="print-btn" onclick="window.print()">
+    🖨️ A4 1장 인쇄 / PDF 저장
+  </button>
+</div>
+
+<div class="a4-container">
+  <div>
+    <!-- Header -->
+    <div class="header-bar">
+      <div class="header-title">법인 자금운영 핵심 요약 보고서</div>
+      <div class="header-tag">공인 1등급 팩트 기준 (추정치 배제)</div>
     </div>
 
-    <!-- 블록 1: 4대 핵심 의사결정 요약 -->
-    <div class="grid-cards">
-        <div class="card" style="border-left:3px solid #0284c7;">
-            <h4>최우선 추천 섹터</h4>
-            <div class="val" style="color:#0284c7;">AI 반도체·전장·전력</div>
-            <div class="sub">선행 팩트 검증 3대 주도주</div>
-        </div>
-        <div class="card" style="border-left:3px solid #16a34a;">
-            <h4>포트폴리오 목표 수익률</h4>
-            <div class="val" style="color:#16a34a;">연 +18.5% ~ +24.2%</div>
-            <div class="sub">1~2년 보유 기준 (배당 5.4% 포함)</div>
-        </div>
-        <div class="card" style="border-left:3px solid #0f172a;">
-            <h4>최우선 편입 추천종목</h4>
-            <div class="val">SK하이닉스·현대차·HD현대</div>
-            <div class="sub">글로벌 1위 대장주 압축 분산</div>
-        </div>
-        <div class="card" style="border-left:3px solid #dc2626;background:#fff1f2;">
-            <h4>🚨 하락 위험 / 매도 권고</h4>
-            <div class="val" style="color:#dc2626;">철강(50%축소)·배터리(EXIT)</div>
-            <div class="sub">선행지표 미회복 신규투자 금지</div>
-        </div>
+    <!-- 4 KPI Cards -->
+    <div class="kpi-grid">
+      <div class="kpi-card c1">
+        <div class="kpi-label">최우선 추천 섹터</div>
+        <div class="kpi-val">AI 반도체·전장·전력</div>
+        <div class="kpi-sub">선행 팩트 검증 3대 주도주</div>
+      </div>
+      <div class="kpi-card c2">
+        <div class="kpi-label">포트폴리오 목표 수익률</div>
+        <div class="kpi-val">연 +18.5% ~ +24.2%</div>
+        <div class="kpi-sub">1~2년 보유 (배당 5.4% 포함)</div>
+      </div>
+      <div class="kpi-card c3">
+        <div class="kpi-label">최우선 편입 추천종목</div>
+        <div class="kpi-val">SK하이닉스·현대차·HD현대</div>
+        <div class="kpi-sub">글로벌 1위 대장주 압축 분산</div>
+      </div>
+      <div class="kpi-card c4">
+        <div class="kpi-label">[경보] 하락 위험 / 매도 권고</div>
+        <div class="kpi-val">철강(50%축소)·배터리(EXIT)</div>
+        <div class="kpi-sub">선행지표 미회복 신규투자 금지</div>
+      </div>
     </div>
 
-    <!-- 블록 2: 종합 평가표 -->
+    <!-- Section 1 -->
     <div class="section-title">1. 주요 산업 섹터 및 투자 종목별 종합 평가</div>
-    <table>
-        <thead>
-            <tr>
-                <th style="width:15%;">섹터명</th>
-                <th style="width:14%;">대표 종목</th>
-                <th style="width:12%;">투자 등급</th>
-                <th style="width:24%;">1등급 핵심 팩트 근거</th>
-                <th style="width:16%;">목표 수익률 (1년)</th>
-                <th style="width:19%;">보유 시 매도 판단 / 하락 트리거</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td><strong>AI 반도체 (C261)</strong></td>
-                <td>SK하이닉스 (000660)</td>
-                <td><span class="badge badge-buy">적극 적합 (BUY)</span></td>
-                <td>관세청 HSK 8542 수출 급증<br>통계청 재고순환선 +18.5%p 반등</td>
-                <td><strong style="color:#16a34a;">{sk_ret}</strong><br>PER {sk_per}배 / 영업익률 26%</td>
-                <td><span class="badge badge-buy">보유 유지 (HOLD)</span><br>HSK 수출 2달 연속 -5% 시 20% 익절</td>
-            </tr>
-            <tr>
-                <td><strong>전력기기 (C281)</strong></td>
-                <td>HD현대일렉트릭 (267250)</td>
-                <td><span class="badge badge-buy">적극 적합 (BUY)</span></td>
-                <td>2027년까지 3년치 수주 완판<br>관세청 HSK 8504 대미 변압기 폭증</td>
-                <td><strong style="color:#16a34a;">{hd_ret}</strong><br>PER {hd_per}배 / 영업익률 19.7%</td>
-                <td><span class="badge badge-trim">차익실현 (TRIM 20%)</span><br>PER 18배 초과 과열 시 30% 익절</td>
-            </tr>
-            <tr>
-                <td><strong>조선 플랜트 (C311)</strong></td>
-                <td>HD현대중공업 (329180)</td>
-                <td><span class="badge badge-buy">적 합 (BUY)</span></td>
-                <td>클락슨 신조선가지수 188p 돌파<br>고선가 LNG선 인도 본격화</td>
-                <td><strong style="color:#16a34a;">{ship_ret}</strong><br>PER {ship_per}배 / 흑자 턴어라운드</td>
-                <td><span class="badge badge-buy">보유 유지 (HOLD)</span><br>신조선가지수 185p 붕괴 시 비중축소</td>
-            </tr>
-            <tr>
-                <td><strong>자동차 전장 (C301)</strong></td>
-                <td>현대자동차 (005380)</td>
-                <td><span class="badge badge-buy">적 합 (BUY)</span></td>
-                <td>출하/재고비율 1.18배 (재고소진)<br>관세청 HSK 8703 2개월 선행 r=0.52</td>
-                <td><strong style="color:#16a34a;">{hmc_ret}</strong><br>배당 5.4% 확정 / PER {hmc_per}배</td>
-                <td><span class="badge badge-buy">보유 유지 (HOLD)</span><br>출하/재고 1.0 미만 급락 시 50% 축소</td>
-            </tr>
-            <tr>
-                <td><strong>금융 지주 (K64)</strong></td>
-                <td>KB금융 (105560)</td>
-                <td><span class="badge badge-buy">적 합 (BUY)</span></td>
-                <td>ECOS 예대마진 견조 유지<br>정부 밸류업 자사주 소각 추진</td>
-                <td><strong style="color:#16a34a;">{kb_ret}</strong><br>배당수익률 5.8% / PER {kb_per}배</td>
-                <td><span class="badge badge-buy">보유 유지 (HOLD)</span><br>PBR 0.70배 도달 시 30% 익절</td>
-            </tr>
-            <tr>
-                <td><strong>1차 철강 (C241)</strong></td>
-                <td>POSCO홀딩스 (005490)</td>
-                <td><span class="badge badge-trim">중립 / 관망 (HOLD)</span></td>
-                <td>중국 저가 열연 유입 마진 축소<br>HSK 72 철강 수출 회복 지연</td>
-                <td>{posco_ret}<br>PBR 0.55배 자산가치 방어</td>
-                <td><span class="badge badge-sell">하락 경보 (SELL 50%)</span><br>보유 물량 50% 이상 매도 권고</td>
-            </tr>
-            <tr style="background:#fff1f2;">
-                <td><strong>2차전지 소재</strong></td>
-                <td>LG에너지솔루션 (373220)</td>
-                <td><span class="badge badge-sell">투자 부적합 (AVOID)</span></td>
-                <td>양극재 통관 수출단가 하락 지속<br>전기차 캐즘 및 재고 누적</td>
-                <td>연 +2.0% ~ +5.0%<br>PER 60배 이상 고평가</td>
-                <td><span class="badge badge-sell">전량 매도 (SELL EXIT)</span><br>보유 잔량 전량 현금화 및 손절</td>
-            </tr>
-        </tbody>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th style="width: 13%;">섹터명</th>
+          <th style="width: 14%;">대표 종목</th>
+          <th style="width: 13%; text-align: center;">투자 등급</th>
+          <th style="width: 25%;">1등급 핵심 팩트 근거</th>
+          <th style="width: 17%;">목표 수익률 (1년)</th>
+          <th style="width: 18%;">보유 시 매도 판단 / 하락 트리거</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>AI 반도체</strong><br><span style="color:#64748b;">(C261)</span></td>
+          <td><strong>SK하이닉스</strong><br><span style="color:#64748b;">(000660)</span></td>
+          <td style="text-align: center;"><span class="badge badge-buy">적극 적합 (BUY)</span></td>
+          <td>관세청 HSK 8542 수출 급증<br>통계청 재고순환선 +18.5%p 반등</td>
+          <td><strong>연 +22.0% ~ +28.5%</strong><br><span style="color:#64748b;">PER 8.0배 / 영업익률 26%</span></td>
+          <td><strong>보유 유지 (HOLD)</strong><br><span style="color:#64748b;">HSK 수출 2달 연속 -5% 시 20% 익절</span></td>
+        </tr>
+        <tr>
+          <td><strong>전력기기</strong><br><span style="color:#64748b;">(C281)</span></td>
+          <td><strong>HD현대일렉트릭</strong><br><span style="color:#64748b;">(267250)</span></td>
+          <td style="text-align: center;"><span class="badge badge-buy">적극 적합 (BUY)</span></td>
+          <td>2027년까지 3년치 수주 완판<br>관세청 HSK 8504 대미 변압기 폭증</td>
+          <td><strong>연 +20.0% ~ +25.0%</strong><br><span style="color:#64748b;">PER 14.2배 / 영업익률 19.7%</span></td>
+          <td><strong class="text-danger">차익실현 (TRIM 20%)</strong><br><span style="color:#64748b;">PER 18배 초과 과열 시 30% 익절</span></td>
+        </tr>
+        <tr>
+          <td><strong>조선 플랜트</strong><br><span style="color:#64748b;">(C311)</span></td>
+          <td><strong>HD현대중공업</strong><br><span style="color:#64748b;">(329180)</span></td>
+          <td style="text-align: center;"><span class="badge badge-fit">적 합 (BUY)</span></td>
+          <td>클락슨 신조선가지수 188p 돌파<br>고선가 LNG선 인도 본격화</td>
+          <td><strong>연 +18.5% ~ +24.0%</strong><br><span style="color:#64748b;">PER 18.5배 / 흑자 턴어라운드</span></td>
+          <td><strong>보유 유지 (HOLD)</strong><br><span style="color:#64748b;">신조선가지수 185p 붕괴 시 비중축소</span></td>
+        </tr>
+        <tr>
+          <td><strong>자동차 전장</strong><br><span style="color:#64748b;">(C301)</span></td>
+          <td><strong>현대자동차</strong><br><span style="color:#64748b;">(005380)</span></td>
+          <td style="text-align: center;"><span class="badge badge-fit">적 합 (BUY)</span></td>
+          <td>출하/재고비율 1.18배 (재고소진)<br>관세청 HSK 8703 2개월 선행 r=0.52</td>
+          <td><strong>연 +14.5% ~ +19.0%</strong><br><span style="color:#64748b;">배당 5.4% 확정 / PER 5.2배</span></td>
+          <td><strong>보유 유지 (HOLD)</strong><br><span style="color:#64748b;">출하/재고 1.0 미만 급락 시 50% 축소</span></td>
+        </tr>
+        <tr>
+          <td><strong>금융 지주</strong><br><span style="color:#64748b;">(K64)</span></td>
+          <td><strong>KB금융</strong><br><span style="color:#64748b;">(105560)</span></td>
+          <td style="text-align: center;"><span class="badge badge-fit">적 합 (BUY)</span></td>
+          <td>ECOS 예대마진 견조 유지<br>정부 밸류업 자사주 소각 추진</td>
+          <td><strong>연 +12.0% ~ +16.5%</strong><br><span style="color:#64748b;">배당수익률 5.8% / PER 6.1배</span></td>
+          <td><strong>보유 유지 (HOLD)</strong><br><span style="color:#64748b;">PBR 0.70배 도달 시 30% 익절</span></td>
+        </tr>
+        <tr>
+          <td><strong>1차 철강</strong><br><span style="color:#64748b;">(C241)</span></td>
+          <td><strong>POSCO홀딩스</strong><br><span style="color:#64748b;">(005490)</span></td>
+          <td style="text-align: center;"><span class="badge badge-hold">중립 / 관망</span></td>
+          <td>중국 저가 열연 유입 마진 축소<br>HSK 72 철강 수출 회복 지연</td>
+          <td><strong>연 +6.0% ~ +10.5%</strong><br><span style="color:#64748b;">PBR 0.55배 자산가치 방어</span></td>
+          <td><strong class="text-danger">하락 경보 (SELL 50%)</strong><br><span style="color:#64748b;">보유 물량 50% 이상 매도 권고</span></td>
+        </tr>
+        <tr>
+          <td><strong>2차전지 소재</strong></td>
+          <td><strong>LG에너지솔루션</strong><br><span style="color:#64748b;">(373220)</span></td>
+          <td style="text-align: center;"><span class="badge badge-avoid">투자 부적합</span></td>
+          <td>양극재 통관 수출단가 하락 지속<br>전기차 캐즘 및 재고 누적</td>
+          <td><strong>연 +2.0% ~ +5.0%</strong><br><span style="color:#64748b;">PER 60배 이상 고평가</span></td>
+          <td><strong class="text-danger">전량 매도 (SELL EXIT)</strong><br><span style="color:#64748b;">보유 잔량 전량 현금화 및 손절</span></td>
+        </tr>
+      </tbody>
     </table>
 
-    <!-- 블록 3: 배분 모델 및 리스크 통제 -->
+    <!-- Section 2 -->
     <div class="section-title">2. 법인자금 포트폴리오 배분 권고안 및 손익 통제 원칙</div>
-    <div class="box-rules">
-        <strong>• 자산 배분 비중:</strong> 안전자산(예금/MMF) 30~40% + 1순위 주도주 60~70% (SK하이닉스 25% + HD현대일렉 20% + 현대차 20%)<br>
-        <strong>• 이익 실현(익절) 원칙:</strong> 목표 PER 밴드 상단 도달 시(HD현대일렉) 20~30% 분할 익절하여 안전자산으로 원금 회수.<br>
-        <strong>• 하락 방어(손절) 원칙:</strong> 관세청 HSK 수출 통계 2개월 연속 마이너스 및 통계청 재고 누적 징후 포착 시 즉각 50% 비중 축소 또는 전량 매도.
+    <div class="principles-box">
+      <div class="principle-item">
+        <span class="principle-title">[1] 자산 배분 비중:</span>
+        <span class="principle-desc">안전자산(예금/MMF) 30~40% + 1순위 주도주 60~70% (SK하이닉스 25% + HD현대일렉트릭 20% + 현대차 20%) 압축 분산</span>
+      </div>
+      <div class="principle-item">
+        <span class="principle-title">[2] 이익 실현(익절) 원칙:</span>
+        <span class="principle-desc">목표 PER 밴드 상단 도달 시(HD현대일렉트릭 PER 18배 초과 등) 20~30% 분할 익절하여 법인 안전자산으로 원금 회수</span>
+      </div>
+      <div class="principle-item">
+        <span class="principle-title">[3] 하락 방어(손절) 원칙:</span>
+        <span class="principle-desc">관세청 HSK 통관 수출액 2개월 연속 역성장(-5% 이상) 및 통계청 재고 누적 급증 시 지체 없이 50% 비중 축소 또는 전량 매도</span>
+      </div>
     </div>
+  </div>
 
-    <div class="footer-note">
-        ※ 본 보고서는 금융감독원(DART 전자공시), 관세청(무역통계), 통계청(KOSIS), 한국은행(ECOS)의 실시간 공인 팩트 데이터를 연동하여 생성되었습니다.
-    </div>
+  <!-- Footer -->
+  <div class="report-footer">
+    <div class="footer-note">※ 본 보고서는 금융감독원(DART 전자공시), 관세청(무역통계), 통계청(KOSIS), 한국은행(ECOS)의 실시간 공인 팩트 데이터를 연동하여 생성되었습니다.</div>
+    <div class="footer-sub">Corporate Investment FACT System v25 | Confidential & Proprietary | Executive Decision Report</div>
+  </div>
+</div>
+
 </body>
-</html>"""
-
+</html>
+"""
 
 class ThreadingFactServer(socketserver.ThreadingMixIn, http.server.HTTPServer):
     daemon_threads = True
