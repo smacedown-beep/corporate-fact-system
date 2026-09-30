@@ -2139,14 +2139,19 @@ def render_a4_executive_report() -> str:
 
 <div class="no-print-bar">
   <div>
-    <strong>📄 법인 자금운영 핵심 요약 보고서 (A4 1장 규격)</strong>
-    <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">
-      * 버튼을 누르면 인쇄 미리보기가 열립니다. 'PDF로 저장'을 선택하시면 PDF 파일로 바로 보관하실 수 있습니다.
+    <strong style="font-size: 13.5px;">📄 법인 자금운영 핵심 요약 보고서 (A4 1장 규격)</strong>
+    <div style="font-size: 11px; color: #94a3b8; margin-top: 3px;">
+      * [PDF 파일 다운로드]를 누르면 파일이 즉시 저장되며, [종이 인쇄]를 누르면 프린터 출력이 진행됩니다.
     </div>
   </div>
-  <button class="print-btn" onclick="window.print()">
-    🖨️ A4 1장 인쇄 / PDF 저장
-  </button>
+  <div style="display: flex; gap: 10px;">
+    <a href="법인_자금운영_핵심_요약_보고서_A4.pdf" download="법인_자금운영_핵심_요약_보고서.pdf" class="print-btn" style="background: #059669; text-decoration: none;">
+      📥 PDF 파일 즉시 다운로드 (저장)
+    </a>
+    <button class="print-btn" onclick="window.print()" style="background: #2563eb;">
+      🖨️ A4 종이 인쇄
+    </button>
+  </div>
 </div>
 
 <div class="a4-container">
@@ -2350,6 +2355,28 @@ class FactDashboardHandler(http.server.BaseHTTPRequestHandler):
                 self.end_headers()
                 self.close_connection = True
                 return
+
+            if path in ("report/a4.pdf", "a4.pdf", "download_a4_pdf"):
+                pdf_file_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "법인_자금운영_핵심_요약_보고서_A4.pdf")
+                if not os.path.exists(pdf_file_path):
+                    # fallback to working dir
+                    pdf_file_path = "/working_dir/c_20222ba157a381cf/corporate_invest_system_next/법인_자금운영_핵심_요약_보고서_A4.pdf"
+                if os.path.exists(pdf_file_path):
+                    with open(pdf_file_path, "rb") as pf:
+                        pdf_data = pf.read()
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/pdf")
+                    self.send_header("Content-Disposition", 'attachment; filename="corporate_investment_fact_report.pdf"')
+                    self.send_header("Content-Length", str(len(pdf_data)))
+                    self.send_header("Connection", "close")
+                    self.end_headers()
+                    try:
+                        self.wfile.write(pdf_data)
+                        self.wfile.flush()
+                    except Exception:
+                        pass
+                    self.close_connection = True
+                    return
 
             if path in ("report/a4", "print_a4", "a4"):
                 html = render_a4_executive_report()
