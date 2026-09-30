@@ -2181,6 +2181,14 @@ class FactDashboardHandler(http.server.BaseHTTPRequestHandler):
             pass
         self.close_connection = True
 
+    def do_HEAD(self):
+        self.send_response(200)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Length", "0")
+        self.send_header("Connection", "close")
+        self.end_headers()
+        self.close_connection = True
+
     def do_OPTIONS(self):
         self.send_response(200)
         self.send_header("Access-Control-Allow-Origin", "*")
@@ -2347,7 +2355,7 @@ def run_server(port=PORT, auto_open=None):
     # 포트 충돌 방지: 8501 ~ 8520 자동 탐색 (IPv4 바인딩 강제)
     for p in range(port, port + 20):
         try:
-            httpd = ThreadingFactServer(("127.0.0.1", p), handler)
+            httpd = ThreadingFactServer(("0.0.0.0", p), handler)
             actual_port = p
             break
         except OSError:
