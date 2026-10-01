@@ -1873,9 +1873,21 @@ def render_screen_audit_log() -> str:
 
 
 def render_a4_executive_report() -> str:
-    """사용자가 지정한 규격에 완벽히 맞춘 A4 1장 법인 자금운영 핵심 요약 보고서."""
-    with open('/working_dir/c_20222ba157a381cf/corporate_invest_system_next/법인_자금운영_핵심_요약_보고서_A4.html', 'r', encoding='utf-8') as f:
-        return f.read()
+    """완전 독립형 메모리 기반 A4 1장 법인 자금운영 핵심 요약 보고서 (어떤 환경에서도 파일 누락 없음)."""
+    try:
+        from src.dashboard.a4_report_template import A4_REPORT_HTML
+        return A4_REPORT_HTML
+    except Exception as e:
+        # Fallback to direct file read if imported as standalone
+        for c in [
+            os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "법인_자금운영_핵심_요약_보고서_A4.html"),
+            os.path.join(os.getcwd(), "법인_자금운영_핵심_요약_보고서_A4.html"),
+            "법인_자금운영_핵심_요약_보고서_A4.html"
+        ]:
+            if os.path.exists(c):
+                with open(c, "r", encoding="utf-8") as f:
+                    return f.read()
+        return "<html><body><h2>보고서 템플릿 로딩 중 오류 발생</h2></body></html>" 
 
 class ThreadingFactServer(socketserver.ThreadingMixIn, http.server.HTTPServer):
     daemon_threads = True
@@ -1946,13 +1958,29 @@ class FactDashboardHandler(http.server.BaseHTTPRequestHandler):
                 return
 
             if path in ("report/a4.pdf", "a4.pdf", "download_a4_pdf"):
-                pdf_file_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "법인_자금운영_핵심_요약_보고서_A4.pdf")
-                if not os.path.exists(pdf_file_path):
-                    # fallback to working dir
-                    pdf_file_path = "/working_dir/c_20222ba157a381cf/corporate_invest_system_next/법인_자금운영_핵심_요약_보고서_A4.pdf"
-                if os.path.exists(pdf_file_path):
-                    with open(pdf_file_path, "rb") as pf:
-                        pdf_data = pf.read()
+                import base64
+                pdf_data = None
+                try:
+                    from src.dashboard.a4_report_template import A4_REPORT_HTML
+                    import re
+                    m = re.search(r'const PDF_BASE64 = "([^"]+)";', A4_REPORT_HTML)
+                    if m:
+                        pdf_data = base64.b64decode(m.group(1))
+                except Exception:
+                    pass
+
+                if not pdf_data:
+                    for p in [
+                        os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "report_a4.pdf"),
+                        os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "법인_자금운영_핵심_요약_보고서_A4.pdf"),
+                        "report_a4.pdf"
+                    ]:
+                        if os.path.exists(p):
+                            with open(p, "rb") as pf:
+                                pdf_data = pf.read()
+                            break
+
+                if pdf_data:
                     self.send_response(200)
                     self.send_header("Content-Type", "application/pdf")
                     self.send_header("Content-Disposition", 'attachment; filename="corporate_investment_fact_report.pdf"')
