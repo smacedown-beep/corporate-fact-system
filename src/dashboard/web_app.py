@@ -83,11 +83,7 @@ def render_layout(current_route: str, content_html: str) -> str:
             {"route": "audit_log", "num": 13, "label": "시스템 불변 감사 로그", "badge": None},
         ]}
     ]
-    nav_html = """<div style="margin: 10px 12px 14px 12px;">
-        <a href="/report/a4" target="_blank" style="display: flex; align-items: center; justify-content: center; gap: 8px; background: linear-gradient(135deg, #1d4ed8, #2563eb); color: #ffffff; text-align: center; padding: 10px 12px; border-radius: 6px; font-weight: 800; font-size: 12.5px; text-decoration: none; box-shadow: 0 4px 10px rgba(37,99,235,0.25); border: 1px solid #3b82f6;">
-            <span>🖨️ A4 핵심 요약보고서 인쇄</span>
-        </a>
-    </div>"""
+    nav_html = ""
     for group in nav_structure:
         nav_html += f'<div class="nav-category">{group["cat"]}</div>\n'
         for item in group["items"]:
@@ -1873,7 +1869,7 @@ def render_screen_audit_log() -> str:
 
 
 def render_a4_executive_report() -> str:
-    """완전 인라인 임베디드 A4 1장 법인 자금운영 핵심 요약 보고서 (외부 파일 0% 의존)."""
+    """완전 인라인 임베디드 A4 1장 법인 자금운영 핵심 요약 보고서 (PDF 저장 및 종이 인쇄 2개 버튼 분리)."""
     return """<!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -2140,14 +2136,19 @@ def render_a4_executive_report() -> str:
 
 <div class="no-print-bar">
   <div>
-    <strong style="font-size: 14px;">📄 법인 자금운영 핵심 요약 보고서 (A4 1장 인쇄 / PDF 저장)</strong>
+    <strong style="font-size: 14px; color: #ffffff;">📄 법인 자금운영 핵심 요약 보고서 (A4 규격)</strong>
     <div style="font-size: 11px; color: #94a3b8; margin-top: 3px;">
-      💡 버튼을 누른 후 대상(프린터)에서 <strong>'PDF로 저장'</strong>을 선택하시면 PDF 파일로 보관되며, <strong>'프린터'</strong>를 선택하시면 종이로 출력됩니다.
+      💡 <strong>[PDF 저장]</strong> 버튼을 누르면 파일로 즉시 저장되며, <strong>[종이 인쇄]</strong>를 누르면 프린터 출력이 진행됩니다.
     </div>
   </div>
-  <button class="print-btn" onclick="window.print()">
-    🖨️ A4 1장 인쇄 / PDF 저장
-  </button>
+  <div style="display: flex; gap: 10px; align-items: center;">
+    <a href="report_a4.pdf" id="pdfDownloadBtn" class="print-btn" style="background: #059669; text-decoration: none;" download="법인_자금운영_핵심_요약_보고서_A4.pdf">
+      📥 PDF 파일 다운로드 (저장)
+    </a>
+    <button class="print-btn" onclick="window.print()" style="background: #2563eb;">
+      🖨️ A4 종이 인쇄
+    </button>
+  </div>
 </div>
 
 <div class="a4-container">
@@ -2280,128 +2281,75 @@ def render_a4_executive_report() -> str:
   </div>
 </div>
 
+
+<script>
+  // On HTTP/HTTPS (Render or local server), point to /report/a4.pdf
+  if (window.location.protocol.startsWith('http')) {
+    var btn = document.getElementById('pdfDownloadBtn');
+    if (btn) {
+      btn.href = '/report/a4.pdf';
+    }
+  }
+</script>
 </body>
-</html>"""
-
-
-class ThreadingFactServer(socketserver.ThreadingMixIn, http.server.HTTPServer):
-    daemon_threads = True
-    allow_reuse_address = True
+</html>
+"""
 
 class FactDashboardHandler(http.server.BaseHTTPRequestHandler):
-    protocol_version = "HTTP/1.1"
-
-    def send_html(self, html_str, status=200):
-        encoded = html_str.encode("utf-8")
-        self.send_response(status)
-        self.send_header("Content-Type", "text/html; charset=utf-8")
-        self.send_header("Content-Length", str(len(encoded)))
-        self.send_header("Connection", "close")
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
-        self.end_headers()
-        try:
-            self.wfile.write(encoded)
-            self.wfile.flush()
-        except Exception:
-            pass
-        self.close_connection = True
-
-    def send_redirect(self, location):
-        self.send_response(302)
-        self.send_header("Location", location)
-        self.send_header("Content-Length", "0")
-        self.send_header("Connection", "close")
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.end_headers()
-        try:
-            self.wfile.flush()
-        except Exception:
-            pass
-        self.close_connection = True
-
-    def do_HEAD(self):
-        self.send_response(200)
-        self.send_header("Content-Type", "text/html; charset=utf-8")
-        self.send_header("Content-Length", "0")
-        self.send_header("Connection", "close")
-        self.end_headers()
-        self.close_connection = True
-
-    def do_OPTIONS(self):
-        self.send_response(200)
+    def end_headers(self):
         self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type")
-        self.send_header("Content-Length", "0")
-        self.send_header("Connection", "close")
+        super().end_headers()
+
+    def do_OPTIONS(self):
+        self.send_response(200)
         self.end_headers()
-        self.close_connection = True
 
     def do_GET(self):
         try:
             parsed = urllib.parse.urlparse(self.path)
             path = parsed.path.strip("/")
 
-            # Favicon 처리
-            if path in ("favicon.ico", "robots.txt"):
-                self.send_response(204)
-                self.send_header("Content-Length", "0")
-                self.send_header("Connection", "close")
-                self.end_headers()
-                self.close_connection = True
-                return
-
             if path in ("report/a4.pdf", "a4.pdf", "download_a4_pdf"):
-                import base64
-                pdf_data = None
-                try:
-                    from src.dashboard.a4_report_template import A4_REPORT_HTML
-                    import re
-                    m = re.search(r'const PDF_BASE64 = "([^"]+)";', A4_REPORT_HTML)
-                    if m:
-                        pdf_data = base64.b64decode(m.group(1))
-                except Exception:
-                    pass
-
-                if not pdf_data:
-                    for p in [
-                        os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "report_a4.pdf"),
-                        os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "법인_자금운영_핵심_요약_보고서_A4.pdf"),
-                        "report_a4.pdf"
-                    ]:
-                        if os.path.exists(p):
-                            with open(p, "rb") as pf:
-                                pdf_data = pf.read()
-                            break
-
-                if pdf_data:
-                    self.send_response(200)
-                    self.send_header("Content-Type", "application/pdf")
-                    self.send_header("Content-Disposition", 'attachment; filename="corporate_investment_fact_report.pdf"')
-                    self.send_header("Content-Length", str(len(pdf_data)))
-                    self.send_header("Connection", "close")
-                    self.end_headers()
-                    try:
-                        self.wfile.write(pdf_data)
-                        self.wfile.flush()
-                    except Exception:
-                        pass
-                    self.close_connection = True
-                    return
+                for p in [
+                    os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "report_a4.pdf"),
+                    os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "법인_자금운영_핵심_요약_보고서_A4.pdf"),
+                    os.path.join(os.getcwd(), "report_a4.pdf"),
+                    "report_a4.pdf"
+                ]:
+                    if os.path.exists(p):
+                        with open(p, "rb") as pf:
+                            pdf_data = pf.read()
+                        self.send_response(200)
+                        self.send_header("Content-Type", "application/pdf")
+                        self.send_header("Content-Disposition", 'attachment; filename="corporate_investment_fact_report.pdf"')
+                        self.send_header("Content-Length", str(len(pdf_data)))
+                        self.send_header("Connection", "close")
+                        self.end_headers()
+                        try:
+                            self.wfile.write(pdf_data)
+                            self.wfile.flush()
+                        except Exception:
+                            pass
+                        self.close_connection = True
+                        return
 
             if path in ("report/a4", "print_a4", "a4"):
                 html = render_a4_executive_report()
-                self.send_html(html, status=200)
+                self.send_response(200)
+                self.send_header("Content-type", "text/html; charset=utf-8")
+                self.end_headers()
+                self.wfile.write(html.encode("utf-8"))
                 return
 
             if not path or path == "index.html" or path == "main":
-                path = "portfolio"  # 기본 메인 화면
+                path = "portfolio"  # 기본 메인 화면: [1] 투자 유망 섹터 및 적합 종목
 
             qs = urllib.parse.parse_qs(parsed.query)
 
-            # 13개 화면 라우팅
-            if path in ("portfolio", "suitability"):
+            # 13개 화면 서버사이드 라우팅
+            if path == "portfolio" or path == "suitability":
                 is_synced = "sync" in qs
                 html = render_layout("portfolio", render_screen_portfolio(sync_success=is_synced))
             elif path == "industry":
@@ -2433,25 +2381,35 @@ class FactDashboardHandler(http.server.BaseHTTPRequestHandler):
             elif path == "audit_log":
                 html = render_layout("audit_log", render_screen_audit_log())
             else:
-                self.send_redirect("/portfolio")
+                # 기본 경로로 리디렉트
+                self.send_response(302)
+                self.send_header("Location", "/portfolio")
+                self.end_headers()
                 return
 
-            self.send_html(html, status=200)
-
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.end_headers()
+            self.wfile.write(html.encode("utf-8"))
         except Exception as e:
             import traceback
             err_msg = traceback.format_exc()
             print(f"[HTTP Handler Error] {err_msg}", file=sys.stderr)
-            err_html = f"<html><body><h2>서버 내부 오류</h2><pre>{err_msg}</pre></body></html>"
-            self.send_html(err_html, status=500)
-
+            try:
+                self.send_response(500)
+                self.send_header("Content-Type", "text/plain; charset=utf-8")
+                self.end_headers()
+                self.wfile.write(f"서버 내부 오류가 발생했습니다:\n\n{err_msg}".encode("utf-8"))
+            except Exception:
+                pass
     def do_POST(self):
-        try:
             parsed = urllib.parse.urlparse(self.path)
             content_length = int(self.headers.get("Content-Length", 0))
-            body = self.rfile.read(content_length).decode("utf-8") if content_length > 0 else ""
+            body = self.rfile.read(content_length).decode("utf-8")
+            
+            # 폼 데이터 파싱
             form_data = urllib.parse.parse_qs(body)
-
+    
             if parsed.path == "/api/sync_latest_data":
                 if LiveDataSynchronizer:
                     try:
@@ -2470,50 +2428,63 @@ class FactDashboardHandler(http.server.BaseHTTPRequestHandler):
                         status="ACTIVE",
                         reason=f"4대 공인기관(DART, ECOS, KOSIS, 관세청) 최신 공식 데이터 동기화 완료 ({now_str})"
                     )
-                self.send_redirect("/portfolio?sync=success")
+                self.send_response(302)
+                self.send_header("Location", "/portfolio?sync=success")
+                self.end_headers()
                 return
-
+    
             if parsed.path == "/api/add_sector":
                 sid = form_data.get("sector_id", ["CUSTOM"])[0]
                 name = form_data.get("name", ["신규 산업"])[0]
                 cat = form_data.get("category", ["General"])[0]
                 hs = form_data.get("customs_hs", [""])[0]
                 corps = form_data.get("company_names", [""])[0]
-
+    
                 engine = SectorDiscoveryEngine()
                 engine.register_new_candidate(
-                    candidate_id=sid,
+                    sector_id=sid,
                     name=name,
                     category=cat,
+                    kosis_sources=[],
                     customs_hs_codes=[hs] if hs else [],
-                    major_companies=[c.strip() for c in corps.split(",") if c.strip()]
+                    company_list=[{"name": corps}] if corps else [],
+                    leading_indicators=["CUSTOM_LEADING_INDICATOR"]
                 )
-                self.send_redirect("/discovery")
+                # 등록 후 산업 발굴 화면으로 리디렉트
+                self.send_response(302)
+                self.send_header("Location", "/discovery")
+                self.end_headers()
                 return
-
-            if parsed.path == "/api/promote_sector":
-                cid = form_data.get("candidate_id", [""])[0]
-                engine = SectorDiscoveryEngine()
-                engine.promote_candidate_to_active(cid)
-                self.send_redirect("/discovery")
-                return
-
-            if parsed.path == "/api/demote_sector":
+    
+            if parsed.path == "/api/approve_sector":
                 sid = form_data.get("sector_id", [""])[0]
-                engine = SectorDiscoveryEngine()
-                engine.demote_active_sector(sid)
-                self.send_redirect("/discovery")
+                by = form_data.get("approved_by", ["투자위원회"])[0]
+                if sid:
+                    engine = SectorDiscoveryEngine()
+                    engine.approve_sector(sid, by)
+                self.send_response(302)
+                self.send_header("Location", "/approval_gate")
+                self.end_headers()
                 return
-
-            self.send_redirect("/portfolio")
-
-        except Exception as e:
-            import traceback
-            err_msg = traceback.format_exc()
-            print(f"[HTTP POST Error] {err_msg}", file=sys.stderr)
-            err_html = f"<html><body><h2>POST 처리 오류</h2><pre>{err_msg}</pre></body></html>"
-            self.send_html(err_html, status=500)
-
+    
+            if parsed.path == "/api/sign_approval":
+                title = form_data.get("title", ["투자안 승인"])[0]
+                AuditLogEngine.get_instance().record_event(
+                    event_type="HUMAN_APPROVAL",
+                    user_or_action="대표이사 서명",
+                    source="HUMAN_APPROVAL_GATE",
+                    object_id=title,
+                    status="APPROVED",
+                    reason=f"[{title}] 에 대해 대표이사 디지털 전자 서명 및 집행 승인이 완료되었습니다."
+                )
+                self.send_response(302)
+                self.send_header("Location", "/audit_log")
+                self.end_headers()
+                return
+    
+            self.send_response(404)
+            self.end_headers()
+    
 def run_server(port=PORT, auto_open=None):
     if start_auto_sync_scheduler:
         try:
@@ -2521,7 +2492,6 @@ def run_server(port=PORT, auto_open=None):
             print("[FACT Engine] 4대 공인기관(DART, ECOS, KOSIS, 관세청) 24/7 자동 동기화 스케줄러 가동 완료")
         except Exception as e:
             print(f"[FACT Engine] 스케줄러 시작 안내: {e}")
-
     if auto_open is None:
         auto_open = False if ("PORT" in os.environ or "RENDER" in os.environ) else True
 
@@ -2529,22 +2499,20 @@ def run_server(port=PORT, auto_open=None):
     handler = FactDashboardHandler
     httpd = None
 
-    # 포트 충돌 방지: 8501 ~ 8520 자동 탐색 (IPv4 바인딩 강제)
-    for p in range(port, port + 20):
+    # 포트 충돌 방지: 8501 ~ 8510 자동 탐색
+    for p in range(port, port + 10):
         try:
-            httpd = ThreadingFactServer(("0.0.0.0", p), handler)
+            socketserver.TCPServer.allow_reuse_address = True
+            httpd = socketserver.TCPServer(("", p), handler)
             actual_port = p
             break
         except OSError:
             continue
 
     if httpd is None:
-        try:
-            httpd = ThreadingFactServer(("0.0.0.0", port), handler)
-            actual_port = port
-        except Exception as e:
-            print(f"[FATAL] 서버 포트 바인딩 실패: {e}")
-            return
+        socketserver.TCPServer.allow_reuse_address = True
+        httpd = socketserver.TCPServer(("", port), handler)
+        actual_port = port
 
     AuditLogEngine.get_instance().record_event(
         event_type="SYSTEM_BOOT",
@@ -2564,19 +2532,12 @@ def run_server(port=PORT, auto_open=None):
     print(f"============================================================")
 
     if auto_open:
-        # 브라우저 자동 오픈
-        threading.Timer(1.2, lambda: webbrowser.open(url)).start()
+        threading.Timer(1.5, lambda: webbrowser.open(url)).start()
 
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:
         print("\n서버를 종료합니다.")
-    finally:
-        try:
-            httpd.server_close()
-        except Exception:
-            pass
-
 
 if __name__ == "__main__":
     run_server()
