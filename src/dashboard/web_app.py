@@ -32,6 +32,8 @@ except Exception:
         start_auto_sync_scheduler = None
         LiveDataSynchronizer = None
         SyncState = None
+
+try:
     from src.engines.indicators.leading_validator import LeadingIndicatorValidator
     from src.engines.backtest.replay_engine import HistoricalReplayEngine
     from src.engines.discovery.sector_discovery_engine import SectorDiscoveryEngine
@@ -39,8 +41,7 @@ except Exception:
     from src.engines.portfolio.cash_allocator import CorporateCashAllocator
     from src.db.connection import DatabaseEngine
     from src.db.repository import ProvenanceRepository
-except ModuleNotFoundError:
-    from corporate_invest_system_next.src.core.audit import AuditLogEngine
+except Exception:
     from corporate_invest_system_next.src.engines.indicators.leading_validator import LeadingIndicatorValidator
     from corporate_invest_system_next.src.engines.backtest.replay_engine import HistoricalReplayEngine
     from corporate_invest_system_next.src.engines.discovery.sector_discovery_engine import SectorDiscoveryEngine
