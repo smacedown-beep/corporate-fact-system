@@ -2145,7 +2145,7 @@ def render_a4_executive_report() -> str:
     </div>
   </div>
   <div style="display: flex; gap: 10px;">
-    <a href="법인_자금운영_핵심_요약_보고서_A4.pdf" download="법인_자금운영_핵심_요약_보고서.pdf" class="print-btn" style="background: #059669; text-decoration: none;">
+    <a href="report_a4.pdf" download="법인_자금운영_핵심_요약_보고서.pdf" class="print-btn" style="background: #059669; text-decoration: none;">
       📥 PDF 파일 즉시 다운로드 (저장)
     </a>
     <button class="print-btn" onclick="window.print()" style="background: #2563eb;">
