@@ -106,6 +106,8 @@ def render_layout(current_route: str, content_html: str) -> str:
         <span class="flow-arrow">→</span>
         <a href="/backtest" class="flow-step passed" title="6. 과거 시점 백테스트로 이동">6. 과거 시점 백테스트</a>
         <span class="flow-arrow">→</span>
+        <a href="/add_sector" class="flow-step passed" title="7. 신규 섹터 등록 및 연구로 이동">7. 신규 섹터 연구</a>
+        <span class="flow-arrow">→</span>
         <a href="/executive" class="flow-step" style="border-color:#f59e0b;color:#f59e0b;" title="8. 총괄 대시보드로 이동">8. 총괄 대시보드</a>
     </div>
     """
@@ -364,7 +366,7 @@ def render_screen_executive() -> str:
     return """
     <div class="header-bar">
         <div>
-            <h1>[8] 총괄 대시보드</h1>
+            <h1>[8] 총괄 대시보드 (Executive Dashboard)</h1>
             <p style="color:var(--text-dim);font-size:12px;margin-top:4px;">기업 유휴자금(약 4억원) 투자의사결정을 위한 단계별 FACT 종합 현황</p>
         </div>
         <div class="meta-info">
@@ -466,7 +468,7 @@ def render_screen_executive() -> str:
 def render_screen_sources() -> str:
     return """
     <div class="header-bar">
-        <h1>[2] 공식 데이터 원천 모니터 (Data Source Monitor)</h1>
+        <h1>[11] 공식 데이터 원천 모니터 (Data Source Monitor)</h1>
         <div class="meta-info">기관 권위 계층: 1등급(Tier-1) 최우선 적용</div>
     </div>
     <div class="callout callout-info">
@@ -542,7 +544,7 @@ def render_screen_sources() -> str:
 def render_screen_macro() -> str:
     return """
     <div class="header-bar">
-        <h1>[3] 거시경제 환경 분석 (Macro Dashboard)</h1>
+        <h1>[9] 거시경제 환경 분석 (Macro Dashboard)</h1>
         <div class="meta-info">한국은행 ECOS 및 미국 연준 FRED 공식 지표</div>
     </div>
     <div class="grid-cards">
@@ -622,7 +624,7 @@ def render_screen_discovery() -> str:
 def render_screen_industry() -> str:
     return """
     <div class="header-bar">
-        <h1>[5] 산업별 팩트 분석 (Industry Analysis)</h1>
+        <h1>[2] 산업별 팩트 분석 (Industry Analysis)</h1>
         <div class="meta-info">통계청 광업제조업동향(DT_1F02001) 공식 통계 기반</div>
     </div>
     <div class="grid-cards">
@@ -690,7 +692,7 @@ def render_screen_company() -> str:
         """
     return f"""
     <div class="header-bar">
-        <h1>[6] 기업 재무 및 펀더멘털 분석 (Company Analysis)</h1>
+        <h1>[4] 기업 재무 및 펀더멘털 (Company Analysis)</h1>
         <div class="meta-info">금융감독원 전자공시시스템(DART) 공식 사업보고서 기반</div>
     </div>
     {cards}
@@ -915,6 +917,12 @@ def render_screen_backtest(selected_date: str = "2023-01-31", selected_sector: s
     ret_prefix = "+" if (point.actual_return_6m or 0) > 0 else ""
     hit_kr = "적중 (HIT)" if point.is_hit_6m else "불일치 (MISS)"
 
+    # Format return strings gracefully
+    ret_1m_str = f"{'+' if (point.actual_return_1m or 0) > 0 else ''}{point.actual_return_1m}%" if point.actual_return_1m is not None else "미도래"
+    ret_3m_str = f"{'+' if (point.actual_return_3m or 0) > 0 else ''}{point.actual_return_3m}%" if point.actual_return_3m is not None else "진행중"
+    ret_6m_str = f"{'+' if (point.actual_return_6m or 0) > 0 else ''}{point.actual_return_6m}%" if point.actual_return_6m is not None else "진행중"
+    ret_12m_str = f"{'+' if (point.actual_return_12m or 0) > 0 else ''}{point.actual_return_12m}%" if point.actual_return_12m is not None else "진행중"
+
     corp_map = {
         "AUTO": "현대자동차", "SEMI_HBM": "SK하이닉스", "POWER_GRID": "HD현대일렉트릭",
         "SHIPBUILDING": "HD현대중공업", "STEEL": "POSCO홀딩스", "FINANCE": "KB금융"
@@ -975,7 +983,7 @@ def render_screen_backtest(selected_date: str = "2023-01-31", selected_sector: s
                 </div>
             </div>
             <div style="font-size:12px;color:#cbd5e1;margin-top:10px;">
-                <strong>사후 시장 결과:</strong> 1개월 후 {point.actual_return_1m}%, 3개월 후 {point.actual_return_3m}%, 6개월 후 {point.actual_return_6m}%, 12개월 후 {point.actual_return_12m or '진행중'}% | 6개월 방향성 일치 여부: <strong>{hit_kr}</strong>
+                <strong>사후 시장 결과:</strong> 1개월 후 {ret_1m_str}, 3개월 후 {ret_3m_str}, 6개월 후 {ret_6m_str}, 12개월 후 {ret_12m_str} | 6개월 방향성 일치 여부: <strong>{hit_kr}</strong>
             </div>
         </div>
     </div>
@@ -1148,7 +1156,7 @@ def render_screen_signal_val(selected_sector: str = "AUTO") -> str:
 def render_screen_add_sector() -> str:
     return """
     <div class="header-bar">
-        <h1>[10] 신규 섹터 등록 및 연구 (Sector Research / Add)</h1>
+        <h1>[7] 신규 섹터 등록 및 연구 (Sector Research / Add)</h1>
         <div class="meta-info">동적 섹터 레지스트리 (코드 하드코딩 불필요)</div>
     </div>
     <div class="card">
@@ -1199,7 +1207,7 @@ def render_screen_portfolio(sync_success: bool = False) -> str:
     return f"""
     <div class="header-bar">
         <div>
-            <h1>[1] 투자 유망 섹터 및 적합 종목 분석 (메인 화면)</h1>
+            <h1>[1] 투자 유망 섹터 및 적합 종목 (메인 화면)</h1>
             <p style="color:var(--text-dim);font-size:12px;margin-top:4px;">공식 팩트(통계청·관세청·DART) 기반 섹터별·종목별 투자 적합도 및 예상 수익률 종합 분석</p>
         </div>
         <div style="display:flex;align-items:center;gap:12px;">
@@ -1841,7 +1849,7 @@ def render_screen_audit_log() -> str:
         """
     return f"""
     <div class="header-bar">
-        <h1>[15] 시스템 불변 감사 로그 (System Audit Log)</h1>
+        <h1>[13] 시스템 불변 감사 로그 (System Audit Log)</h1>
         <div class="meta-info">JSONL 기반 불변 감사 증적 (Immutable Audit Trail)</div>
     </div>
     <div class="card">

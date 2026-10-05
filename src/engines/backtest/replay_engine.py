@@ -136,18 +136,37 @@ class HistoricalReplayEngine:
             
         base_price = float(price_dict[base_date])
         
-        # Simulate forward return lookups
-        future_dates = sorted([d for d in price_dict.keys() if d > decision_date])
+        # Exact calendar delta forward return lookups (prevents index misalignments)
+        base_dt = datetime.strptime(decision_date, "%Y-%m-%d")
+        future_items = [(datetime.strptime(d, "%Y-%m-%d"), d, float(p)) 
+                        for d, p in price_dict.items() if d > decision_date]
+        future_items.sort(key=lambda x: x[0])
+
+        horizons = [
+            ("1m", 30, 20, 45),
+            ("3m", 90, 60, 115),
+            ("6m", 180, 140, 220),
+            ("12m", 365, 300, 400),
+        ]
         
-        p_1m = float(price_dict[future_dates[0]]) if len(future_dates) > 0 else None
-        p_3m = float(price_dict[future_dates[1]]) if len(future_dates) > 1 else None
-        p_6m = float(price_dict[future_dates[2]]) if len(future_dates) > 2 else None
-        p_12m = float(price_dict[future_dates[4]]) if len(future_dates) > 4 else None
-        
-        r_1m = round((p_1m - base_price) / base_price * 100, 2) if p_1m else None
-        r_3m = round((p_3m - base_price) / base_price * 100, 2) if p_3m else None
-        r_6m = round((p_6m - base_price) / base_price * 100, 2) if p_6m else None
-        r_12m = round((p_12m - base_price) / base_price * 100, 2) if p_12m else None
+        matched_prices = {}
+        matched_returns = {}
+        for label, target_days, min_d, max_d in horizons:
+            candidates = [(abs((dt - base_dt).days - target_days), d_str, p) 
+                          for dt, d_str, p in future_items if min_d <= (dt - base_dt).days <= max_d]
+            if candidates:
+                candidates.sort(key=lambda x: x[0])
+                p_val = candidates[0][2]
+                matched_prices[label] = p_val
+                matched_returns[label] = round((p_val - base_price) / base_price * 100, 2)
+            else:
+                matched_prices[label] = None
+                matched_returns[label] = None
+
+        p_1m, r_1m = matched_prices["1m"], matched_returns["1m"]
+        p_3m, r_3m = matched_prices["3m"], matched_returns["3m"]
+        p_6m, r_6m = matched_prices["6m"], matched_returns["6m"]
+        p_12m, r_12m = matched_prices["12m"], matched_returns["12m"]
 
         # Determine signal based strictly on past factual trend (e.g. 2023H1 was strong export growth)
         if decision_date >= "2023-01-01" and decision_date <= "2024-02-01":
