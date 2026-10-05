@@ -568,7 +568,7 @@ def render_screen_macro() -> str:
         <h3>거시경제 환경 종합 평가 (Macro Interpretation)</h3>
         <p style="font-size:13px;line-height:1.7;color:#cbd5e1;">
             고금리 지속 환경 속에서도 원/달러 환율이 1,340원대의 고환율을 유지함에 따라 완성차(현대차) 및 자동차 전장 부품 협력사의 원화 기준 수출 채산성이 견고하게 유지되고 있습니다.
-            미국 자동차 판매량이 연간 1,580만 대 수준으로 견조하고 하이브리드 및 전장화 부품 수요가 증가하고 있어, 국내 주요 제조업 및 수출 밸류체인과 직결된 대외 거시 여건은 <strong>BULLISH (우호적)</strong>로 판정됩니다.
+            미국 자동차 판매량이 연간 1,580만 대 수준으로 견조하고 하이브리드 및 전장화 부품 수요가 증가하고 있어, 국내 주요 제조업 및 수출 밸류체인과 직결된 대외 거시 여건은 <strong>상승 우호적 (호조)</strong>으로 판정됩니다.
         </p>
     </div>
     """
@@ -890,11 +890,12 @@ def render_screen_forensic_eps(selected_corp: str = "HMC") -> str:
         </table>
     </div>
     """
-def render_screen_backtest(selected_date: str = "2023-01-31", selected_sector: str = "AUTO") -> str:
+def render_screen_backtest(selected_date: str = "2024-06-28", selected_sector: str = "AUTO") -> str:
     engine = HistoricalReplayEngine()
+    dates = engine.get_available_decision_dates(selected_sector)
+    if selected_date not in dates:
+        selected_date = "2024-06-28" if "2024-06-28" in dates else (dates[-1] if dates else "2024-06-28")
     point = engine.replay_decision_date(selected_date, sector_id=selected_sector)
-    
-    dates = ["2023-01-31", "2023-06-30", "2023-11-30", "2024-01-31", "2024-06-28"]
     date_options = ""
     for d in dates:
         sel = "selected" if d == selected_date else ""
@@ -1710,7 +1711,7 @@ def render_screen_lineage() -> str:
             &nbsp;&nbsp;&nbsp;&nbsp;└── SHA256: 85e74c04db662495d852a...<br>
             &nbsp;&nbsp;&nbsp;&nbsp;└── 2개월 선행 외표본 상관계수: 0.518 (p=0.002)<br>
             [5] 복합 시그널 생성 (Composite Signal)<br>
-            &nbsp;&nbsp;&nbsp;&nbsp;└── 산업: 우호적(BULLISH) | 밸류에이션: 저평가(UNDERVALUED) | 비중확대(OVERWEIGHT)<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;└── 산업: 상승 호조 | 밸류에이션: 저평가 매력 | 비중확대(매수 권고)<br>
             [6] 포트폴리오 유휴자금 배분안 확정<br>
             &nbsp;&nbsp;&nbsp;&nbsp;└── 하남전기 / 뉴모텍 배분안 도출 → 인간 승인 대기
         </div>
