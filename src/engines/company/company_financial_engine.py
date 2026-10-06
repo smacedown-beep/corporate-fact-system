@@ -326,3 +326,23 @@ class CompanyFinancialEngine:
 
     def list_all_companies(self) -> List[CompanyFinancialProfile]:
         return list(self.profiles.values())
+
+    def apply_live_sync(self):
+        """실시간 동기화 상태(SyncState) 및 시장 시세를 프로필에 실시간 반영합니다."""
+        try:
+            from src.engines.sync.live_data_synchronizer import SyncState
+            snap = SyncState.get_snapshot()
+            val_map = snap.get("stock_valuations", {})
+            for code, profile in self.profiles.items():
+                if code in val_map:
+                    v = val_map[code]
+                    if "current_price" in v:
+                        profile.market_cap_krw = int(v["current_price"] * profile.eps_provenance.weighted_average_common_shares)
+                    if "per" in v:
+                        profile.per = float(v["per"])
+                    if "pbr" in v:
+                        profile.pbr = float(v["pbr"])
+                    if "operating_margin" in v:
+                        profile.operating_margin_pct = float(v["operating_margin"])
+        except Exception:
+            pass

@@ -655,6 +655,7 @@ def render_screen_industry() -> str:
 
 def render_screen_company() -> str:
     engine = CompanyFinancialEngine()
+    engine.apply_live_sync()
     companies = engine.list_all_companies()
     cards = ""
     for c in companies:
@@ -1016,8 +1017,13 @@ def render_screen_backtest(selected_date: str = "2024-06-28", selected_sector: s
     </div>
     """
 def render_screen_signal_val(selected_sector: str = "AUTO") -> str:
-    # 6대 전 섹터별 선행지표 검증 데이터
-    sector_data = {
+    # 실시간 선행지표 상관분석 엔진(LeadingIndicatorValidator) 동적 호출
+    from src.engines.indicators.leading_validator import LeadingIndicatorValidator
+    dyn_data = LeadingIndicatorValidator.get_live_sector_correlations(selected_sector)
+    
+    sector_data = {selected_sector: dyn_data}
+    if False:
+        _legacy_mock = {
         "AUTO": {
             "name": "친환경차 및 자동차 전장 (C301)",
             "indicator": "관세청 승용차 수출물량 (HSK 8703)",
@@ -1098,7 +1104,7 @@ def render_screen_signal_val(selected_sector: str = "AUTO") -> str:
         }
     }
 
-    curr = sector_data.get(selected_sector, sector_data["AUTO"])
+    curr = dyn_data
 
     tabs_html = f'''
     <div style="margin-bottom:18px;display:flex;flex-wrap:wrap;gap:6px;">

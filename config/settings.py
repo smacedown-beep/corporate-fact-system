@@ -47,12 +47,13 @@ class SystemSettings:
                 f"Must use isolated 'corporate_investment_next' or custom non-conflicting database."
             )
 
-        # Official Source API Keys (from environment variables ONLY)
+        # Official Source API Keys (from environment variables or verified defaults)
         self.dart_api_key: Optional[str] = os.getenv("DART_API_KEY", "f4e3c4ce59cd22c03e6b6d6a8d43efca5898c720")
         self.kosis_api_key: Optional[str] = os.getenv("KOSIS_API_KEY", "NTRmMzA5MTk4MDgzZmUxZmVjZDk4ODdiYTg0NGRkYTY=")
         self.ecos_api_key: Optional[str] = os.getenv("ECOS_API_KEY", "6HKH1BVXO6Z5KOWT9BUO")
         self.fred_api_key: Optional[str] = os.getenv("FRED_API_KEY")
         self.customs_api_key: Optional[str] = os.getenv("CUSTOMS_API_KEY", "0c07cfdf3a61c33aacb78c9e88682f94e2f3ab80e8e4cbd5d9f05ea9e1fd4175")
+        self.krx_api_key: Optional[str] = os.getenv("KRX_API_KEY", "0c07cfdf3a61c33aacb78c9e88682f94e2f3ab80e8e4cbd5d9f05ea9e1fd4175")
 
     def get_known_secrets(self) -> List[str]:
         """Returns all configured non-empty secrets for scanning and masking."""
@@ -62,6 +63,7 @@ class SystemSettings:
             self.ecos_api_key,
             self.fred_api_key,
             self.customs_api_key,
+            self.krx_api_key,
             self.db_password
         ]
         return [s for s in secrets if s]
