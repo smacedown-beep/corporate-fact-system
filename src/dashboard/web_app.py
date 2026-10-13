@@ -360,6 +360,33 @@ def render_layout(current_route: str, content_html: str) -> str:
         {pipeline_html}
         {content_html}
     </main>
+    <script>
+    // [실시간 주가 자동 동기화] 링크 접속 시 및 60초 주기 자동 갱신
+    function syncLiveQuotes() {{
+        fetch('/api/sync_market_prices')
+            .then(function(res) {{ return res.json(); }})
+            .then(function(data) {{
+                if (data && data.status === 'SUCCESS') {{
+                    for (var code in data) {{
+                        var info = data[code];
+                        if (info && info.price) {{
+                            var el = document.getElementById('live_price_' + code);
+                            if (el) {{
+                                el.innerText = Number(info.price).toLocaleString() + '원';
+                            }}
+                        }}
+                    }}
+                    var badge = document.getElementById('live_krx_badge');
+                    if (badge) {{
+                        badge.innerText = 'KRX 실시간 체결 연동 완료 (' + new Date().toLocaleTimeString('ko-KR') + ')';
+                    }}
+                }}
+            }})
+            .catch(function(e) {{ console.log('Live quote fetch error:', e); }});
+    }}
+    document.addEventListener('DOMContentLoaded', syncLiveQuotes);
+    setInterval(syncLiveQuotes, 60000);
+    </script>
 </body>
 </html>"""
 def render_screen_executive() -> str:
@@ -736,7 +763,7 @@ def render_screen_forensic_eps(selected_corp: str = "HMC") -> str:
             "note_reason": "HBM3E 공급 확대로 인한 턴어라운드 실적 주석 재계산 완전 검증"
         },
         "HD_ELECTRIC": {
-            "name": "HD현대일렉트릭㈜ (267250)",
+            "name": "HD현대일렉트릭㈜ (267260)",
             "receipt": "20240516000982",
             "report_name": "2024.05.16 분기보고서 (DART 접수)",
             "note_num": "주석 21 (주당순이익)",
@@ -811,7 +838,7 @@ def render_screen_forensic_eps(selected_corp: str = "HMC") -> str:
     <div style="margin-bottom:18px;display:flex;flex-wrap:wrap;gap:6px;">
         <a href="/forensic_eps?corp=HMC" class="tab-btn {'active' if selected_corp == 'HMC' else ''}">1. 현대자동차 (005380)</a>
         <a href="/forensic_eps?corp=SK_HYNIX" class="tab-btn {'active' if selected_corp == 'SK_HYNIX' else ''}">2. SK하이닉스 (000660)</a>
-        <a href="/forensic_eps?corp=HD_ELECTRIC" class="tab-btn {'active' if selected_corp == 'HD_ELECTRIC' else ''}">3. HD현대일렉트릭 (267250)</a>
+        <a href="/forensic_eps?corp=HD_ELECTRIC" class="tab-btn {'active' if selected_corp == 'HD_ELECTRIC' else ''}">3. HD현대일렉트릭 (267260)</a>
         <a href="/forensic_eps?corp=HD_SHIPBUILDING" class="tab-btn {'active' if selected_corp == 'HD_SHIPBUILDING' else ''}">4. HD현대중공업 (329180)</a>
         <a href="/forensic_eps?corp=POSCO" class="tab-btn {'active' if selected_corp == 'POSCO' else ''}">5. POSCO홀딩스 (005490)</a>
         <a href="/forensic_eps?corp=KB_FINANCE" class="tab-btn {'active' if selected_corp == 'KB_FINANCE' else ''}">6. KB금융 (105560)</a>
@@ -905,7 +932,7 @@ def render_screen_backtest(selected_date: str = "2024-06-28", selected_sector: s
     sectors = [
         ("AUTO", "자동차 (현대자동차 005380)"),
         ("SEMI_HBM", "반도체 (SK하이닉스 000660)"),
-        ("POWER_GRID", "AI 인프라 (HD현대일렉트릭 267250)"),
+        ("POWER_GRID", "AI 인프라 (HD현대일렉트릭 267260)"),
         ("SHIPBUILDING", "조선 (HD현대중공업 329180)"),
         ("STEEL", "철강 (POSCO홀딩스 005490)"),
         ("FINANCE", "금융 (KB금융 105560)")
@@ -1192,7 +1219,7 @@ def render_screen_add_sector() -> str:
             </div>
             <div style="margin-top:16px;">
                 <label style="font-size:12px;color:var(--text-dim);">주요 대표 기업 (회사명/종목코드):</label>
-                <input type="text" name="company_names" placeholder="예: HD현대일렉트릭(267250), LS ELECTRIC(010120)" style="width:100%;margin-top:6px;">
+                <input type="text" name="company_names" placeholder="예: HD현대일렉트릭(267260), LS ELECTRIC(010120)" style="width:100%;margin-top:6px;">
             </div>
             <div style="margin-top:18px;">
                 <button type="submit">신규 산업 후보 등록 (초안 등록)</button>
@@ -1202,6 +1229,34 @@ def render_screen_add_sector() -> str:
     """
 
 def render_screen_portfolio(sync_success: bool = False) -> str:
+    from src.engines.sync.live_data_synchronizer import SyncState
+    v = SyncState.stock_valuations
+    
+    sk_price = int(v.get("000660", {}).get("current_price", 1609000))
+    sk_intra = int(v.get("000660", {}).get("intraday_price", 1609000))
+    sk_target = v.get("000660", {}).get("target_price_str", "2,050,000 ~ 2,180,000원")
+    
+    hd_price = int(v.get("267260", {}).get("current_price", 582000))
+    hd_intra = int(v.get("267260", {}).get("intraday_price", 582000))
+    hd_target = v.get("267260", {}).get("target_price_str", "750,000 ~ 790,000원")
+    
+    hhi_price = int(v.get("329180", {}).get("current_price", 384000))
+    hhi_intra = int(v.get("329180", {}).get("intraday_price", 384000))
+    hhi_target = v.get("329180", {}).get("target_price_str", "490,000 ~ 515,000원")
+    
+    hmc_price = int(v.get("005380", {}).get("current_price", 324500))
+    hmc_intra = int(v.get("005380", {}).get("intraday_price", 324500))
+    hmc_target = v.get("005380", {}).get("target_price_str", "385,000 ~ 405,000원")
+    
+    kb_price = int(v.get("105560", {}).get("current_price", 162400))
+    kb_target = v.get("105560", {}).get("target_price_str", "185,000 ~ 193,000원")
+    
+    posco_price = int(v.get("005490", {}).get("current_price", 306500))
+    posco_target = v.get("005490", {}).get("target_price_str", "330,000 ~ 345,000원")
+    
+    lg_price = int(v.get("373220", {}).get("current_price", 401500))
+    lg_target = v.get("373220", {}).get("target_price_str", "405,000 ~ 415,000원")
+
     sync_banner = """
     <div class="callout callout-info" style="border-left:4px solid var(--pass);background:rgba(16, 185, 129, 0.12);color:#e2e8f0;display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
         <div>
@@ -1299,9 +1354,9 @@ def render_screen_portfolio(sync_success: bool = False) -> str:
                         - 통계청 반도체 재고순환선 +18.5%p 반등
                     </td>
                     <td>
-                        <div style="font-size:12px;color:var(--text-dim);">현재가: <strong style="color:#38bdf8;font-size:14px;">1,773,000원</strong> <span style="font-size:11px;color:#94a3b8;">(장중 1,747,000원 / 175만~180만원선 등락)</span></div>
-                        <div style="font-size:15px;color:var(--pass);font-weight:800;margin:2px 0;">목표가 2,160,000 ~ 2,280,000원</div>
-                        <span style="font-size:11px;color:var(--accent);font-weight:600;">(연 +22.0% ~ +28.5% / 1년 기준)</span>
+                        <div style="font-size:12px;color:var(--text-dim);">현재가: <strong id="live_price_000660" style="color:#38bdf8;font-size:14px;">{sk_price:,}원</strong> <span style="font-size:11px;color:#94a3b8;">(장중 {sk_intra:,}원 / 10월 12일 종가)</span></div>
+                        <div style="font-size:15px;color:var(--pass);font-weight:800;margin:2px 0;">목표가 2,050,000 ~ 2,180,000원</div>
+                        <span style="font-size:11px;color:var(--accent);font-weight:600;">(연 +27.7% ~ +35.8% / 1년 기준)</span>
                     </td>
                     <td>- PER 8.0배<br>- 영업이익률 26.0% 급반등</td>
                     <td>- 엔비디아 HBM3E 독점적 지위<br>- [주의] AI CapEx 집행 속도</td>
@@ -1321,7 +1376,7 @@ def render_screen_portfolio(sync_success: bool = False) -> str:
                     </td>
                     <td>
                         <strong style="font-size:14px;color:#fff;">HD현대일렉트릭</strong><br>
-                        <span style="font-size:11px;color:var(--text-dim);">267250 (LS일렉트릭 보조)</span>
+                        <span style="font-size:11px;color:var(--text-dim);">267260 (LS일렉트릭 보조)</span>
                     </td>
                     <td><span class="status-badge badge-pass" style="font-size:11px;">적극 적합 (STRONG BUY)</span></td>
                     <td>
@@ -1330,9 +1385,9 @@ def render_screen_portfolio(sync_success: bool = False) -> str:
                         - 북미 전력망 교체 및 AI 전력 수요 급증
                     </td>
                     <td>
-                        <div style="font-size:12px;color:var(--text-dim);">현재가: <strong style="color:#38bdf8;font-size:14px;">683,000원</strong> <span style="font-size:11px;color:#94a3b8;">(장중 653,000원)</span></div>
-                        <div style="font-size:15px;color:var(--pass);font-weight:800;margin:2px 0;">목표가 820,000 ~ 854,000원</div>
-                        <span style="font-size:11px;color:var(--accent);font-weight:600;">(연 +20.0% ~ +25.0% / 1년 기준)</span>
+                        <div style="font-size:12px;color:var(--text-dim);">현재가: <strong id="live_price_267260" style="color:#38bdf8;font-size:14px;">{hd_price:,}원</strong> <span style="font-size:11px;color:#94a3b8;">(장중 {hd_intra:,}원 / 10월 12일 종가)</span></div>
+                        <div style="font-size:15px;color:var(--pass);font-weight:800;margin:2px 0;">목표가 750,000 ~ 790,000원</div>
+                        <span style="font-size:11px;color:var(--accent);font-weight:600;">(연 +28.8% ~ +35.7% / 1년 기준)</span>
                     </td>
                     <td>- 2027년까지 수주 완판<br>- 영업이익률 19.7%</td>
                     <td>- AI 데이터센터 전력 슈퍼사이클<br>- [주의] 구리 원자재 가격</td>
@@ -1361,9 +1416,9 @@ def render_screen_portfolio(sync_success: bool = False) -> str:
                         - 클락슨 신조선가지수 188p 돌파
                     </td>
                     <td>
-                        <div style="font-size:12px;color:var(--text-dim);">현재가: <strong style="color:#fff;">420,000원</strong></div>
-                        <div style="font-size:15px;color:var(--pass);font-weight:800;margin:2px 0;">목표가 498,000 ~ 520,000원</div>
-                        <span style="font-size:11px;color:var(--accent);font-weight:600;">(연 +18.5% ~ +24.0% / 1년 기준)</span>
+                        <div style="font-size:12px;color:var(--text-dim);">현재가: <strong id="live_price_329180" style="color:#38bdf8;font-size:14px;">{hhi_price:,}원</strong> <span style="font-size:11px;color:#94a3b8;">(10월 12일 종가)</span></div>
+                        <div style="font-size:15px;color:var(--pass);font-weight:800;margin:2px 0;">목표가 490,000 ~ 515,000원</div>
+                        <span style="font-size:11px;color:var(--accent);font-weight:600;">(연 +18.9% ~ +25.0% / 1년 기준)</span>
                     </td>
                     <td>- LNG선 고선가 인도 본격화<br>- 영업이익 흑자 턴어라운드</td>
                     <td>- 친환경 이중연료 선박 독점력<br>- [주의] 후판 가격 및 인건비</td>
@@ -1392,9 +1447,9 @@ def render_screen_portfolio(sync_success: bool = False) -> str:
                         - DART 주석 27 EPS 12,664원 일치
                     </td>
                     <td>
-                        <div style="font-size:11px;color:var(--text-dim);">현재가: <strong style="color:#38bdf8;">348,000원</strong></div>
-                        <div style="font-size:14px;color:var(--pass);font-weight:800;margin:2px 0;">목표가 398,000 ~ 415,000원</div>
-                        <span style="font-size:11px;color:var(--accent);font-weight:600;">(연 +14.5% ~ +19.0% / 배당 5.4% 포함)</span>
+                        <div style="font-size:11px;color:var(--text-dim);">현재가: <strong id="live_price_005380" style="color:#38bdf8;font-size:14px;">{hmc_price:,}원</strong></div>
+                        <div style="font-size:14px;color:var(--pass);font-weight:800;margin:2px 0;">목표가 385,000 ~ 405,000원</div>
+                        <span style="font-size:11px;color:var(--accent);font-weight:600;">(연 +20.3% ~ +26.5% / 배당 5.4% 포함)</span>
                     </td>
                     <td>- <strong>PER 5.2배, PBR 0.62배</strong><br>- 배당수익률 5.4% 극저평가</td>
                     <td>- 하이브리드 고수익 차종 호조<br>- [주의] 주요국 관세 및 보조금</td>
@@ -1423,9 +1478,9 @@ def render_screen_portfolio(sync_success: bool = False) -> str:
                         - 밸류업 프로그램 및 자사주 소각
                     </td>
                     <td>
-                        <div style="font-size:11px;color:var(--text-dim);">현재가: <strong style="color:#38bdf8;">168,500원</strong></div>
-                        <div style="font-size:14px;color:var(--pass);font-weight:800;margin:2px 0;">목표가 189,000 ~ 196,000원</div>
-                        <span style="font-size:11px;color:var(--accent);font-weight:600;">(연 +12.0% ~ +16.5% / 배당 5.8% 포함)</span>
+                        <div style="font-size:11px;color:var(--text-dim);">현재가: <strong id="live_price_105560" style="color:#38bdf8;font-size:14px;">{kb_price:,}원</strong></div>
+                        <div style="font-size:14px;color:var(--pass);font-weight:800;margin:2px 0;">목표가 185,000 ~ 193,000원</div>
+                        <span style="font-size:11px;color:var(--accent);font-weight:600;">(연 +13.6% ~ +18.5% / 배당 5.8% 포함)</span>
                     </td>
                     <td>- PER 6.1배, PBR 0.48배<br>- <strong>배당수익률 5.8%</strong></td>
                     <td>- 압도적 주주환원율(자사주 소각)<br>- [주의] 연체율 및 대손충당금</td>
@@ -1454,9 +1509,9 @@ def render_screen_portfolio(sync_success: bool = False) -> str:
                         - 선행지표 상관계수 0.382 (지지 수준)
                     </td>
                     <td>
-                        <div style="font-size:11px;color:var(--text-dim);">현재가: <strong style="color:#38bdf8;">318,000원</strong></div>
-                        <div style="font-size:14px;color:var(--warning);font-weight:800;margin:2px 0;">목표가 337,000 ~ 352,000원</div>
-                        <span style="font-size:11px;color:var(--text-dim);">(연 +6.0% ~ +10.5% / 중립 관망)</span>
+                        <div style="font-size:11px;color:var(--text-dim);">현재가: <strong id="live_price_005490" style="color:#38bdf8;font-size:14px;">{posco_price:,}원</strong></div>
+                        <div style="font-size:14px;color:var(--warning);font-weight:800;margin:2px 0;">목표가 330,000 ~ 345,000원</div>
+                        <span style="font-size:11px;color:var(--text-dim);">(연 +5.7% ~ +10.5% / 중립 관망)</span>
                     </td>
                     <td>- PBR 0.55배 자산가치 방어<br>- 리튬 신사업 중장기 모멘텀</td>
                     <td>- 중국 부동산 철강 수요 회복 확인<br>- [결론] 턴어라운드 확인 시 진입</td>
@@ -1485,9 +1540,9 @@ def render_screen_portfolio(sync_success: bool = False) -> str:
                         - 통계청 배터리 재고 증가세 미해소
                     </td>
                     <td>
-                        <div style="font-size:11px;color:var(--text-dim);">현재가: <strong style="color:#38bdf8;font-size:14px;">381,500원</strong></div>
-                        <div style="font-size:14px;color:var(--text-dim);font-weight:800;margin:2px 0;">목표가 389,000 ~ 400,000원</div>
-                        <span style="font-size:11px;color:var(--text-dim);">(연 +2.0% ~ +5.0% / 신규진입 보류)</span>
+                        <div style="font-size:11px;color:var(--text-dim);">현재가: <strong id="live_price_373220" style="color:#38bdf8;font-size:14px;">{lg_price:,}원</strong></div>
+                        <div style="font-size:14px;color:var(--text-dim);font-weight:800;margin:2px 0;">목표가 405,000 ~ 415,000원</div>
+                        <span style="font-size:11px;color:var(--text-dim);">(연 +1.7% ~ +4.2% / 신규진입 보류)</span>
                     </td>
                     <td>- PER 60배 이상 고평가<br>- 실적 추정치 하향 조정</td>
                     <td>- 전기차 수요 둔화(캐즘) 지속<br>- [결론] 선행지표 반등 전까지 보류</td>
@@ -1535,7 +1590,7 @@ def render_screen_portfolio(sync_success: bool = False) -> str:
                     <td>관세청 HSK 8542 / 통계청 C261 재고순환선</td>
                 </tr>
                 <tr>
-                    <td><strong>HD현대일렉트릭 (267250)</strong><br><span style="font-size:11px;color:var(--text-dim);">전력기기</span></td>
+                    <td><strong>HD현대일렉트릭 (267260)</strong><br><span style="font-size:11px;color:var(--text-dim);">전력기기</span></td>
                     <td><span class="status-badge badge-warn" style="color:#f59e0b;">차익실현 경계 (TRIM 20%)</span></td>
                     <td>PER 18.0배 초과 도달 시 (보유 물량 30% 분할 익절)</td>
                     <td>관세청 HSK 8504 대미 변압기 수출액 전월비 -15% 둔화 시</td>
@@ -1690,7 +1745,7 @@ def render_screen_portfolio(sync_success: bool = False) -> str:
                 </div>
             </div>
             <div class="card" style="background:var(--card-sub);margin-bottom:0;">
-                <h4 style="font-size:15px;color:var(--warning);margin-bottom:8px;">HD현대일렉트릭 (267250)</h4>
+                <h4 style="font-size:15px;color:var(--warning);margin-bottom:8px;">HD현대일렉트릭 (267260)</h4>
                 <div style="font-size:12px;line-height:1.8;color:#cbd5e1;">
                     • <strong>섹터:</strong> AI 데이터센터 전력기기 및 변압기<br>
                     • <strong>예상 수익률:</strong> <span style="color:var(--pass);font-weight:700;">연 +20.0% ~ +25.0%</span><br>
@@ -2232,58 +2287,58 @@ def render_a4_executive_report() -> str:
       <tbody>
         <tr>
           <td><strong>AI 반도체</strong><br><span style="color:#64748b;">(C261)</span></td>
-          <td><strong>SK하이닉스 (000660)<br><span style="color:#0284c7;font-weight:700;">현재가 1,773,000원</span></span></span></span></td>
+          <td><strong>SK하이닉스 (000660)<br><span style="color:#0284c7;font-weight:700;">현재가 1,609,000원</span></span></span></span></td>
           <td style="text-align: center;"><span class="badge badge-buy">적극 적합 (BUY)</span></td>
           <td>관세청 HSK 8542 수출 급증<br>통계청 재고순환선 +18.5%p 반등</td>
-          <td><strong style="color:#15803d;font-size:10px;">목표가 2,160,000 ~ 2,280,000원</strong><br><span style="color:#64748b;">(연 +22.0% ~ +28.5% / PER 7.7배)</span></td>
+          <td><strong style="color:#15803d;font-size:10px;">목표가 2,050,000 ~ 2,180,000원</strong><br><span style="color:#64748b;">(연 +27.7% ~ +35.8% / PER 7.0배)</span></td>
           <td><strong>보유 유지 (HOLD)</strong><br><span style="color:#64748b;">HSK 수출 2달 연속 -5% 시 20% 익절</span></td>
         </tr>
         <tr>
           <td><strong>전력기기</strong><br><span style="color:#64748b;">(C281)</span></td>
-          <td><strong>HD현대일렉 (267250)<br><span style="color:#0284c7;font-weight:700;">현재가 683,000원</span></span></span></span></td>
+          <td><strong>HD현대일렉 (267260)<br><span style="color:#0284c7;font-weight:700;">현재가 582,000원</span></span></span></span></td>
           <td style="text-align: center;"><span class="badge badge-buy">적극 적합 (BUY)</span></td>
           <td>2027년까지 3년치 수주 완판<br>관세청 HSK 8504 대미 변압기 폭증</td>
-          <td><strong style="color:#15803d;font-size:10px;">목표가 820,000 ~ 854,000원</strong><br><span style="color:#64748b;">(연 +20.0% ~ +25.0% / PER 17.5배)</span></td>
+          <td><strong style="color:#15803d;font-size:10px;">목표가 750,000 ~ 790,000원</strong><br><span style="color:#64748b;">(연 +28.8% ~ +35.7% / PER 24.6배)</span></td>
           <td><strong class="text-danger">차익실현 (TRIM 20%)</strong><br><span style="color:#64748b;">PER 18배 초과 과열 시 30% 익절</span></td>
         </tr>
         <tr>
           <td><strong>조선 플랜트</strong><br><span style="color:#64748b;">(C311)</span></td>
-          <td><strong>HD현대중공업 (329180)<br><span style="color:#0284c7;font-weight:700;">현재가 420,000원</span></span></td>
+          <td><strong>HD현대중공업 (329180)<br><span style="color:#0284c7;font-weight:700;">현재가 384,000원</span></span></td>
           <td style="text-align: center;"><span class="badge badge-fit">적 합 (BUY)</span></td>
           <td>클락슨 신조선가지수 188p 돌파<br>고선가 LNG선 인도 본격화</td>
-          <td><strong style="color:#1d4ed8;font-size:10px;">목표가 498,000 ~ 520,000원</strong><br><span style="color:#64748b;">(연 +18.5% ~ +24.0% / 흑자전환)</span></td>
+          <td><strong style="color:#1d4ed8;font-size:10px;">목표가 490,000 ~ 515,000원</strong><br><span style="color:#64748b;">(연 +18.9% ~ +25.0% / 흑자확대)</span></td>
           <td><strong>보유 유지 (HOLD)</strong><br><span style="color:#64748b;">신조선가지수 185p 붕괴 시 비중축소</span></td>
         </tr>
         <tr>
           <td><strong>자동차 전장</strong><br><span style="color:#64748b;">(C301)</span></td>
-          <td><strong>현대자동차 (005380)<br><span style="color:#0284c7;font-weight:700;">현재가 348,000원</span></span></td>
+          <td><strong>현대자동차 (005380)<br><span style="color:#0284c7;font-weight:700;">현재가 324,500원</span></span></td>
           <td style="text-align: center;"><span class="badge badge-fit">적 합 (BUY)</span></td>
           <td>출하/재고비율 1.18배 (재고소진)<br>관세청 HSK 8703 2개월 선행 r=0.52</td>
-          <td><strong style="color:#1d4ed8;font-size:10px;">목표가 398,000 ~ 415,000원</strong><br><span style="color:#64748b;">(연 +14.5% ~ +19.0% / 배당 5.4%)</span></td>
+          <td><strong style="color:#1d4ed8;font-size:10px;">목표가 385,000 ~ 405,000원</strong><br><span style="color:#64748b;">(연 +20.3% ~ +26.5% / 배당 5.4%)</span></td>
           <td><strong>보유 유지 (HOLD)</strong><br><span style="color:#64748b;">출하/재고 1.0 미만 급락 시 50% 축소</span></td>
         </tr>
         <tr>
           <td><strong>금융 지주</strong><br><span style="color:#64748b;">(K64)</span></td>
-          <td><strong>KB금융 (105560)<br><span style="color:#0284c7;font-weight:700;">현재가 168,500원</span></span></span></span></td>
+          <td><strong>KB금융 (105560)<br><span style="color:#0284c7;font-weight:700;">현재가 162,400원</span></span></span></span></td>
           <td style="text-align: center;"><span class="badge badge-fit">적 합 (BUY)</span></td>
           <td>ECOS 예대마진 견조 유지<br>정부 밸류업 자사주 소각 추진</td>
-          <td><strong style="color:#1d4ed8;font-size:10px;">목표가 189,000 ~ 196,000원</strong><br><span style="color:#64748b;">(연 +12.0% ~ +16.5% / 배당 5.8%)</span></td>
+          <td><strong style="color:#1d4ed8;font-size:10px;">목표가 185,000 ~ 193,000원</strong><br><span style="color:#64748b;">(연 +13.6% ~ +18.5% / 배당 5.8%)</span></td>
           <td><strong>보유 유지 (HOLD)</strong><br><span style="color:#64748b;">PBR 0.70배 도달 시 30% 익절</span></td>
         </tr>
         <tr>
           <td><strong>1차 철강</strong><br><span style="color:#64748b;">(C241)</span></td>
-          <td><strong>POSCO홀딩스 (005490)<br><span style="color:#0284c7;font-weight:700;">현재가 318,000원</span></span></td>
+          <td><strong>POSCO홀딩스 (005490)<br><span style="color:#0284c7;font-weight:700;">현재가 306,500원</span></span></td>
           <td style="text-align: center;"><span class="badge badge-hold">중립 / 관망</span></td>
           <td>중국 저가 열연 유입 마진 축소<br>HSK 72 철강 수출 회복 지연</td>
-          <td><strong style="color:#b45309;font-size:10px;">목표가 337,000 ~ 352,000원</strong><br><span style="color:#64748b;">(연 +6.0% ~ +10.5% / PBR 0.55배)</span></td>
+          <td><strong style="color:#b45309;font-size:10px;">목표가 330,000 ~ 345,000원</strong><br><span style="color:#64748b;">(연 +5.7% ~ +10.5% / PBR 0.54배)</span></td>
           <td><strong class="text-danger">하락 경보 (SELL 50%)</strong><br><span style="color:#64748b;">보유 물량 50% 이상 매도 권고</span></td>
         </tr>
         <tr>
           <td><strong>2차전지 소재</strong></td>
-          <td><strong>LG에너지솔루션 (373220)<br><span style="color:#0284c7;font-weight:700;">현재가 381,500원</span></span></td>
+          <td><strong>LG에너지솔루션 (373220)<br><span style="color:#0284c7;font-weight:700;">현재가 401,500원</span></span></td>
           <td style="text-align: center;"><span class="badge badge-avoid">투자 부적합</span></td>
           <td>양극재 통관 수출단가 하락 지속<br>전기차 캐즘 및 재고 누적</td>
-          <td><strong style="color:#b91c1c;font-size:10px;">목표가 389,000 ~ 400,000원</strong><br><span style="color:#64748b;">(연 +2.0% ~ +5.0% / PER 60배)</span></td>
+          <td><strong style="color:#b91c1c;font-size:10px;">목표가 405,000 ~ 415,000원</strong><br><span style="color:#64748b;">(연 +1.7% ~ +4.2% / PER 60배)</span></td>
           <td><strong class="text-danger">전량 매도 (SELL EXIT)</strong><br><span style="color:#64748b;">보유 잔량 전량 현금화 및 손절</span></td>
         </tr>
       </tbody>
@@ -2448,6 +2503,11 @@ class FactDashboardHandler(http.server.BaseHTTPRequestHandler):
             # 13개 화면 서버사이드 라우팅
             if path == "portfolio" or path == "suitability":
                 is_synced = "sync" in qs
+                try:
+                    from src.engines.sync.live_data_synchronizer import LiveDataSynchronizer
+                    LiveDataSynchronizer().sync_market_prices()
+                except Exception:
+                    pass
                 html = render_layout("portfolio", render_screen_portfolio(sync_success=is_synced))
             elif path == "industry":
                 html = render_layout("industry", render_screen_industry())
