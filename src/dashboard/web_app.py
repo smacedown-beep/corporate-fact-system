@@ -942,9 +942,38 @@ def render_screen_backtest(selected_date: str = "2024-06-28", selected_sector: s
         sel = "selected" if s_id == selected_sector else ""
         sector_options += f'<option value="{s_id}" {sel}>{s_name}</option>'
 
-    color_6m = "var(--pass)" if (point.actual_return_6m or 0) > 0 else "var(--fail)"
-    ret_prefix = "+" if (point.actual_return_6m or 0) > 0 else ""
-    hit_kr = "적중 (HIT)" if point.is_hit_6m else "불일치 (MISS)"
+    # 6개월 적중 여부 판정 정밀화 (None일 때 불일치로 오판정 방지)
+    if point.is_hit_6m is True:
+        hit_kr = '<span style="color:var(--pass);">적중 (HIT)</span>'
+    elif point.is_hit_6m is False:
+        hit_kr = '<span style="color:var(--fail);">불일치 (MISS)</span>'
+    else:
+        hit_kr = '<span style="color:var(--accent);">검증 진행중 (6개월 미도래)</span>'
+
+    # 동적 사후 수익률 카드 표기 (6개월 미도래 시 가장 최근 도래한 3개월/1개월 성과를 연동 표기)
+    if point.actual_return_6m is not None:
+        card_ret_title = "6개월 후 사후 수익률"
+        ret_prefix = "+" if point.actual_return_6m > 0 else ""
+        card_ret_val = f"{ret_prefix}{point.actual_return_6m}%"
+        card_ret_sub = "(의사결정일로부터 6개월 경과 확정치)"
+        color_ret = "var(--pass)" if point.actual_return_6m > 0 else "var(--fail)"
+    elif point.actual_return_3m is not None:
+        card_ret_title = "3개월 후 사후 수익률 (최근 도래)"
+        ret_prefix = "+" if point.actual_return_3m > 0 else ""
+        card_ret_val = f"{ret_prefix}{point.actual_return_3m}%"
+        card_ret_sub = "(6개월 사후 성과는 12월 말 도래 예정)"
+        color_ret = "var(--pass)" if point.actual_return_3m > 0 else "var(--fail)"
+    elif point.actual_return_1m is not None:
+        card_ret_title = "1개월 후 사후 수익률 (최근 도래)"
+        ret_prefix = "+" if point.actual_return_1m > 0 else ""
+        card_ret_val = f"{ret_prefix}{point.actual_return_1m}%"
+        card_ret_sub = "(3개월/6개월 검증 대기 중)"
+        color_ret = "var(--pass)" if point.actual_return_1m > 0 else "var(--fail)"
+    else:
+        card_ret_title = "사후 수익률"
+        card_ret_val = "검증 진행중"
+        card_ret_sub = "(사후 검증 기간 미도래)"
+        color_ret = "var(--accent)"
 
     # Format return strings gracefully
     ret_1m_str = f"{'+' if (point.actual_return_1m or 0) > 0 else ''}{point.actual_return_1m}%" if point.actual_return_1m is not None else "미도래"
@@ -1007,8 +1036,9 @@ def render_screen_backtest(selected_date: str = "2024-06-28", selected_sector: s
                     <div class="val" style="font-size:18px;">{point.base_price:,.0f} 원</div>
                 </div>
                 <div class="card" style="background:#1e293b;margin-bottom:0;">
-                    <h3>6개월 후 사후 수익률</h3>
-                    <div class="val" style="font-size:18px;color:{color_6m};">{ret_prefix}{point.actual_return_6m}%</div>
+                    <h3>{card_ret_title}</h3>
+                    <div class="val" style="font-size:18px;color:{color_ret};">{card_ret_val}</div>
+                    <div class="sub" style="font-size:10px;color:var(--text-dim);margin-top:4px;">{card_ret_sub}</div>
                 </div>
             </div>
             <div style="font-size:12px;color:#cbd5e1;margin-top:10px;">
