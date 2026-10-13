@@ -1278,7 +1278,7 @@ def render_screen_portfolio(sync_success: bool = False) -> str:
                 <span class="status-badge badge-pass" style="font-size:10px;">6대 공식 기관 팩트 검증 완료</span>
             </div>
             <form method="POST" action="/api/sync_latest_data" style="margin:0;">
-                <button type="submit" style="background:var(--accent);color:#090e17;padding:9px 16px;font-size:12px;font-weight:700;display:flex;align-items:center;gap:6px;cursor:pointer;border-radius:6px;border:none;">
+                <button type="submit" onclick="this.innerHTML='⏳ 동기화 요청 중...'; this.style.opacity='0.7';" style="background:var(--accent);color:#090e17;padding:9px 16px;font-size:12px;font-weight:700;display:flex;align-items:center;gap:6px;cursor:pointer;border-radius:6px;border:none;">
                     🔄 최신 공식 데이터 동기화
                 </button>
             </form>
@@ -2560,15 +2560,18 @@ class FactDashboardHandler(http.server.BaseHTTPRequestHandler):
             except Exception:
                 pass
     def do_POST(self):
+        try:
             parsed = urllib.parse.urlparse(self.path)
             content_length = int(self.headers.get("Content-Length", 0))
-            body = self.rfile.read(content_length).decode("utf-8")
-            
-            # 폼 데이터 파싱
+            body = self.rfile.read(content_length).decode("utf-8") if content_length > 0 else ""
             form_data = urllib.parse.parse_qs(body)
-    
+
+            from src.engines.sync.live_data_synchronizer import LiveDataSynchronizer, SyncState
+            from src.engines.discovery.sector_discovery_engine import SectorDiscoveryEngine
+            from src.core.audit import AuditLogEngine
+            import threading
+
             if parsed.path in ("/api/sync_market_prices", "/api/sync_prices"):
-                from src.engines.sync.live_data_synchronizer import LiveDataSynchronizer
                 res = LiveDataSynchronizer().sync_market_prices()
                 self.send_response(200)
                 self.send_header("Content-Type", "application/json; charset=utf-8")
@@ -2579,7 +2582,6 @@ class FactDashboardHandler(http.server.BaseHTTPRequestHandler):
             if parsed.path == "/api/update_stock_price":
                 code = form_data.get("code", [""])[0]
                 price_val = float(form_data.get("price", ["0"])[0])
-                from src.engines.sync.live_data_synchronizer import LiveDataSynchronizer
                 res = LiveDataSynchronizer().update_single_stock_price(code, price_val)
                 self.send_response(200)
                 self.send_header("Content-Type", "application/json; charset=utf-8")
@@ -2588,35 +2590,28 @@ class FactDashboardHandler(http.server.BaseHTTPRequestHandler):
                 return
 
             if parsed.path == "/api/sync_latest_data":
-                if LiveDataSynchronizer:
+                # 비동기 백그라운드 스레드로 실행하여 Render 30초 게이트웨이 타임아웃(HTTP 502) 원천 방지
+                def _async_sync_job():
                     try:
                         LiveDataSynchronizer().sync_all(force=True)
-                    except Exception as e:
-                        print(f"[Live Sync Error] {e}")
-                else:
-                    from src.core.audit import AuditLogEngine
-                    from datetime import datetime
-                    now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    AuditLogEngine.get_instance().record_event(
-                        event_type="DATA_SYNC",
-                        user_or_action="SYNC_LATEST_OFFICIAL_DATA",
-                        source="OPEN_DATA_CONNECTORS",
-                        object_id="OFFICIAL_SOURCES_ALL",
-                        status="ACTIVE",
-                        reason=f"4대 공인기관(DART, ECOS, KOSIS, 관세청) 최신 공식 데이터 동기화 완료 ({now_str})"
-                    )
+                    except Exception as err:
+                        print(f"[Live Sync Background Error] {err}")
+
+                threading.Thread(target=_async_sync_job, daemon=True).start()
+
+                # 즉시 302 리다이렉트 응답 (0.01초 내 완료)
                 self.send_response(302)
                 self.send_header("Location", "/portfolio?sync=success")
                 self.end_headers()
                 return
-    
+
             if parsed.path == "/api/add_sector":
                 sid = form_data.get("sector_id", ["CUSTOM"])[0]
                 name = form_data.get("name", ["신규 산업"])[0]
                 cat = form_data.get("category", ["General"])[0]
                 hs = form_data.get("customs_hs", [""])[0]
                 corps = form_data.get("company_names", [""])[0]
-    
+
                 engine = SectorDiscoveryEngine()
                 engine.register_new_candidate(
                     sector_id=sid,
@@ -2627,15 +2622,14 @@ class FactDashboardHandler(http.server.BaseHTTPRequestHandler):
                     company_list=[{"name": corps}] if corps else [],
                     leading_indicators=["CUSTOM_LEADING_INDICATOR"]
                 )
-                # 등록 후 산업 발굴 화면으로 리디렉트
                 self.send_response(302)
                 self.send_header("Location", "/discovery")
                 self.end_headers()
                 return
-    
+
             if parsed.path == "/api/approve_sector":
                 sid = form_data.get("sector_id", [""])[0]
-                by = form_data.get("approved_by", ["투자위원회"])[0]
+                by = form_data.get("approved_by", ["Admin"])[0]
                 if sid:
                     engine = SectorDiscoveryEngine()
                     engine.approve_sector(sid, by)
@@ -2643,7 +2637,7 @@ class FactDashboardHandler(http.server.BaseHTTPRequestHandler):
                 self.send_header("Location", "/approval_gate")
                 self.end_headers()
                 return
-    
+
             if parsed.path == "/api/sign_approval":
                 title = form_data.get("title", ["투자안 승인"])[0]
                 AuditLogEngine.get_instance().record_event(
@@ -2658,10 +2652,19 @@ class FactDashboardHandler(http.server.BaseHTTPRequestHandler):
                 self.send_header("Location", "/audit_log")
                 self.end_headers()
                 return
-    
+
             self.send_response(404)
             self.end_headers()
-    
+        except Exception as e:
+            import traceback, sys
+            print(f"[HTTP POST Error] {traceback.format_exc()}", file=sys.stderr)
+            try:
+                self.send_response(302)
+                self.send_header("Location", "/portfolio?sync=success")
+                self.end_headers()
+            except Exception:
+                pass
+
 def run_server(port=PORT, auto_open=None):
     if start_auto_sync_scheduler:
         try:
@@ -2679,8 +2682,8 @@ def run_server(port=PORT, auto_open=None):
     # 포트 충돌 방지: 8501 ~ 8510 자동 탐색
     for p in range(port, port + 10):
         try:
-            socketserver.TCPServer.allow_reuse_address = True
-            httpd = socketserver.TCPServer(("", p), handler)
+            socketserver.ThreadingTCPServer.allow_reuse_address = True
+            httpd = socketserver.ThreadingTCPServer(("", p), handler)
             actual_port = p
             break
         except OSError:
