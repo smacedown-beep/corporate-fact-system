@@ -975,11 +975,27 @@ def render_screen_backtest(selected_date: str = "2024-06-28", selected_sector: s
         card_ret_sub = "(사후 검증 기간 미도래)"
         color_ret = "var(--accent)"
 
-    # Format return strings gracefully
-    ret_1m_str = f"{'+' if (point.actual_return_1m or 0) > 0 else ''}{point.actual_return_1m}%" if point.actual_return_1m is not None else "미도래"
-    ret_3m_str = f"{'+' if (point.actual_return_3m or 0) > 0 else ''}{point.actual_return_3m}%" if point.actual_return_3m is not None else "진행중"
-    ret_6m_str = f"{'+' if (point.actual_return_6m or 0) > 0 else ''}{point.actual_return_6m}%" if point.actual_return_6m is not None else "진행중"
-    ret_12m_str = f"{'+' if (point.actual_return_12m or 0) > 0 else ''}{point.actual_return_12m}%" if point.actual_return_12m is not None else "진행중"
+    # Format return strings gracefully with calendar verification
+    from datetime import datetime, timedelta
+    try:
+        base_decision_dt = datetime.strptime(point.decision_date, "%Y-%m-%d")
+    except Exception:
+        base_decision_dt = datetime.now()
+    now_calendar_dt = datetime.now()
+
+    def format_horizon_return(ret_val, days_offset):
+        if ret_val is not None:
+            prefix = "+" if ret_val > 0 else ""
+            return f"{prefix}{ret_val}%"
+        target_horizon_dt = base_decision_dt + timedelta(days=days_offset)
+        if target_horizon_dt > now_calendar_dt:
+            return "진행중 (미도래)"
+        return "데이터 집계 중"
+
+    ret_1m_str = format_horizon_return(point.actual_return_1m, 30)
+    ret_3m_str = format_horizon_return(point.actual_return_3m, 90)
+    ret_6m_str = format_horizon_return(point.actual_return_6m, 180)
+    ret_12m_str = format_horizon_return(point.actual_return_12m, 365)
 
     corp_map = {
         "AUTO": "현대자동차", "SEMI_HBM": "SK하이닉스", "POWER_GRID": "HD현대일렉트릭",
