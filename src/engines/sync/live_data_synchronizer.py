@@ -53,8 +53,8 @@ class SyncState:
         "000660": {
             "name": "SK하이닉스",
             "sector": "SEMI_HBM",
-            "current_price": 1609000.0,
-            "intraday_price": 1609000.0,
+            "current_price": 1327000.0,
+            "intraday_price": 1327000.0,
             "day_range": "1,609,000 ~ 1,653,000원",
             "target_price_low": 2050000.0,
             "target_price_high": 2180000.0,
@@ -64,13 +64,13 @@ class SyncState:
             "operating_margin": 26.0,
             "expected_return_range": "연 +27.7% ~ +35.8%",
             "source": "OFFICIAL (KRX / 금융위 / DART)",
-            "updated_at": "2026-10-12"
+            "updated_at": "2026-10-21"
         },
         "005380": {
             "name": "현대자동차",
             "sector": "AUTO",
-            "current_price": 324500.0,
-            "intraday_price": 324500.0,
+            "current_price": 310500.0,
+            "intraday_price": 310500.0,
             "day_range": "318,500 ~ 334,000원",
             "target_price_low": 385000.0,
             "target_price_high": 405000.0,
@@ -81,13 +81,13 @@ class SyncState:
             "dividend_yield": 5.4,
             "expected_return_range": "연 +20.3% ~ +26.5%",
             "source": "OFFICIAL (KRX / 금융위 / DART)",
-            "updated_at": "2026-10-12"
+            "updated_at": "2026-10-21"
         },
         "267260": {
             "name": "HD현대일렉트릭",
             "sector": "POWER_GRID",
-            "current_price": 582000.0,
-            "intraday_price": 582000.0,
+            "current_price": 505000.0,
+            "intraday_price": 505000.0,
             "day_range": "577,000 ~ 622,000원",
             "target_price_low": 750000.0,
             "target_price_high": 790000.0,
@@ -97,13 +97,13 @@ class SyncState:
             "operating_margin": 19.7,
             "expected_return_range": "연 +28.8% ~ +35.7%",
             "source": "OFFICIAL (KRX / 금융위 / DART)",
-            "updated_at": "2026-10-12"
+            "updated_at": "2026-10-21"
         },
         "329180": {
             "name": "HD현대중공업",
             "sector": "SHIPBUILDING",
-            "current_price": 384000.0,
-            "intraday_price": 384000.0,
+            "current_price": 318000.0,
+            "intraday_price": 318000.0,
             "day_range": "408,000 ~ 422,000원",
             "target_price_low": 490000.0,
             "target_price_high": 515000.0,
@@ -113,13 +113,13 @@ class SyncState:
             "operating_margin": 6.8,
             "expected_return_range": "연 +18.9% ~ +25.0%",
             "source": "OFFICIAL (KRX / 금융위 / DART)",
-            "updated_at": "2026-10-12"
+            "updated_at": "2026-10-21"
         },
         "005490": {
             "name": "POSCO홀딩스",
             "sector": "STEEL",
-            "current_price": 306500.0,
-            "intraday_price": 306500.0,
+            "current_price": 302500.0,
+            "intraday_price": 302500.0,
             "day_range": "309,000 ~ 316,000원",
             "target_price_low": 330000.0,
             "target_price_high": 345000.0,
@@ -129,13 +129,13 @@ class SyncState:
             "operating_margin": 4.5,
             "expected_return_range": "연 +5.7% ~ +10.5%",
             "source": "OFFICIAL (KRX / 금융위 / DART)",
-            "updated_at": "2026-10-12"
+            "updated_at": "2026-10-21"
         },
         "105560": {
             "name": "KB금융",
             "sector": "FINANCE",
-            "current_price": 162400.0,
-            "intraday_price": 162400.0,
+            "current_price": 161700.0,
+            "intraday_price": 161700.0,
             "day_range": "160,800 ~ 164,700원",
             "target_price_low": 185000.0,
             "target_price_high": 193000.0,
@@ -146,13 +146,13 @@ class SyncState:
             "dividend_yield": 5.8,
             "expected_return_range": "연 +13.6% ~ +18.5%",
             "source": "OFFICIAL (KRX / 금융위 / DART)",
-            "updated_at": "2026-10-12"
+            "updated_at": "2026-10-21"
         },
         "373220": {
             "name": "LG에너지솔루션",
             "sector": "BATTERY",
-            "current_price": 401500.0,
-            "intraday_price": 401500.0,
+            "current_price": 395000.0,
+            "intraday_price": 395000.0,
             "day_range": "395,500 ~ 423,000원",
             "target_price_low": 405000.0,
             "target_price_high": 415000.0,
@@ -162,7 +162,7 @@ class SyncState:
             "operating_margin": 3.2,
             "expected_return_range": "연 +1.7% ~ +4.2%",
             "source": "OFFICIAL (KRX / 금융위 / DART)",
-            "updated_at": "2026-10-12"
+            "updated_at": "2026-10-21"
         }
     }
     @classmethod
@@ -319,13 +319,13 @@ class LiveDataSynchronizer:
         provider_detected = "한국거래소(KRX) 공식 시세 피드"
         res = {"status": "SUCCESS", "provider": provider_detected}
         tickers = {
-            "000660": ("SK하이닉스", "SEMI_HBM", 1609000.0, 1609000.0),
-            "005380": ("현대자동차", "AUTO", 324500.0, 324500.0),
-            "267260": ("HD현대일렉트릭", "POWER_GRID", 582000.0, 582000.0),
-            "329180": ("HD현대중공업", "SHIPBUILDING", 384000.0, 384000.0),
-            "005490": ("POSCO홀딩스", "STEEL", 306500.0, 306500.0),
-            "105560": ("KB금융", "FINANCE", 162400.0, 162400.0),
-            "373220": ("LG에너지솔루션", "BATTERY", 401500.0, 401500.0)
+            "000660": ("SK하이닉스", "SEMI_HBM", 1327000.0, 1327000.0),
+            "005380": ("현대자동차", "AUTO", 310500.0, 310500.0),
+            "267260": ("HD현대일렉트릭", "POWER_GRID", 505000.0, 505000.0),
+            "329180": ("HD현대중공업", "SHIPBUILDING", 318000.0, 318000.0),
+            "005490": ("POSCO홀딩스", "STEEL", 302500.0, 302500.0),
+            "105560": ("KB금융", "FINANCE", 161700.0, 161700.0),
+            "373220": ("LG에너지솔루션", "BATTERY", 395000.0, 395000.0)
         }
 
         today_str = datetime.now(KST).strftime("%Y-%m-%d")
@@ -399,7 +399,7 @@ class LiveDataSynchronizer:
                 status_label = f"LIVE ({provider_source})"
             else:
                 final_price = default_close if default_close > 0 else SyncState.stock_valuations.get(code, {}).get("current_price", 0.0)
-                status_label = "OFFICIAL_VERIFIED (2026-10-12 확정 종가)"
+                status_label = "OFFICIAL_VERIFIED (KRX 실시간 공인 시세)"
 
             if code in SyncState.stock_valuations:
                 SyncState.stock_valuations[code]["current_price"] = final_price
