@@ -400,7 +400,10 @@ def render_layout(current_route: str, content_html: str) -> str:
 def render_screen_executive() -> str:
     from datetime import datetime
     from src.engines.sync.live_data_synchronizer import SyncState
-    from src.engines.portfolio.suitability_evaluator import DynamicSuitabilityEvaluator
+    try:
+        from src.engines.portfolio.suitability_evaluator import DynamicSuitabilityEvaluator
+    except ImportError:
+        from src.engines.portfolio.cash_allocator import DynamicSuitabilityEvaluator
     
     sync_time_str = SyncState.last_sync_time if SyncState.last_sync_time else datetime.now().strftime("%Y-%m-%d %H:%M")
     strat = DynamicSuitabilityEvaluator.calculate_strategy_returns()
@@ -1317,7 +1320,10 @@ def render_screen_add_sector() -> str:
 
 def render_screen_portfolio(sync_success: bool = False) -> str:
     from src.engines.sync.live_data_synchronizer import SyncState
-    from src.engines.portfolio.suitability_evaluator import DynamicSuitabilityEvaluator
+    try:
+        from src.engines.portfolio.suitability_evaluator import DynamicSuitabilityEvaluator
+    except ImportError:
+        from src.engines.portfolio.cash_allocator import DynamicSuitabilityEvaluator
     dynamic_portfolio_rows = DynamicSuitabilityEvaluator.render_portfolio_table_rows()
     dynamic_trigger_rows = DynamicSuitabilityEvaluator.render_trigger_table_rows()
     strat = DynamicSuitabilityEvaluator.calculate_strategy_returns()
@@ -1796,7 +1802,10 @@ def render_screen_audit_log() -> str:
 def render_a4_executive_report() -> str:
     """완전 인라인 임베디드 A4 1장 법인 자금운영 핵심 요약 보고서 (KRX 실시간 체결 시세 및 동적 지표 연동)."""
     from src.engines.sync.live_data_synchronizer import SyncState
-    from src.engines.portfolio.suitability_evaluator import DynamicSuitabilityEvaluator
+    try:
+        from src.engines.portfolio.suitability_evaluator import DynamicSuitabilityEvaluator
+    except ImportError:
+        from src.engines.portfolio.cash_allocator import DynamicSuitabilityEvaluator
     v = SyncState.stock_valuations
     sk_price = int(v.get("000660", {}).get("current_price", 1327000))
     hd_price = int(v.get("267260", {}).get("current_price", 505000))
