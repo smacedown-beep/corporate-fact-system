@@ -135,7 +135,7 @@ class SectorDiscoveryEngine:
             ecos_sources=["036Y001 (원/달러 환율)"],
             fred_sources=["PPI_ELECTRIC_POWER (미국 전력설비 생산자물가지수)"],
             company_list=[
-                {"corp_code": "00267250", "stock_code": "267250", "name": "HD현대일렉트릭"},
+                {"corp_code": "00267250", "stock_code": "267260", "name": "HD현대일렉트릭"},
                 {"corp_code": "00106240", "stock_code": "010120", "name": "LS ELECTRIC"},
                 {"corp_code": "02980400", "stock_code": "298040", "name": "효성중공업"}
             ],
