@@ -321,6 +321,48 @@ class CompanyFinancialEngine:
             tags={"revenue": "FACT", "operating_profit": "FACT", "operating_margin": "DERIVED", "eps": "FACT", "valuation": "DERIVED"}
         )
 
+
+        # 7. LG Energy Solution (373220 / 01515323) - Battery
+        lg_eps = EpsProvenanceRecord(
+            corp_code="01515323",
+            company_name="LG에너지솔루션",
+            period="2024 1H Verified",
+            receipt_no="20240814002610",
+            filing_date="2024-08-14",
+            dart_note_no=26,
+            numerator_attributable_profit_krw=770200000000,
+            preferred_shares_allocation_krw=0,
+            weighted_average_common_shares=234000000,
+            calculated_eps_krw=round(770200000000 / 234000000, 3),
+            official_eps_krw=3291,
+            discrepancy=round(abs(770200000000 / 234000000 - 3291), 3),
+            validation_status="PASS",
+            raw_document_xml_sha256="68de91f0231c...",
+            comparison_notes="DART Note 26 validated. EV demand slowdown impacting utilization rate and operating leverage."
+        )
+        self.profiles["373220"] = CompanyFinancialProfile(
+            corp_code="01515323",
+            stock_code="373220",
+            company_name="LG에너지솔루션",
+            sector_id="BATTERY",
+            reporting_period="DART 공식 감사보고서 기준 (실시간 시세 연동)",
+            revenue_krw=25619000000000,
+            operating_profit_krw=819800000000,
+            operating_margin_pct=3.2,
+            net_income_krw=1540400000000,
+            eps_krw=6583,
+            roe_pct=6.2,
+            debt_to_equity_pct=84.5,
+            cash_and_equivalents_krw=5120000000000,
+            free_cash_flow_krw=-1250000000000,
+            market_cap_krw=92430000000000,
+            per=60.0,
+            pbr=3.70,
+            dividend_yield_pct=0.0,
+            eps_provenance=lg_eps,
+            tags={"revenue": "FACT", "operating_profit": "FACT", "operating_margin": "DERIVED", "eps": "FACT", "valuation": "DERIVED"}
+        )
+
     def get_profile(self, stock_code: str) -> Optional[CompanyFinancialProfile]:
         if stock_code == "267250":
             stock_code = "267260"

@@ -498,10 +498,10 @@ class LiveDataSynchronizer:
             price_fetched = None
             provider_source = None
 
-            # 1. Yahoo Finance KRX API
+            # 1. Yahoo Finance KRX API (실시간 체결가 + 최근 5년 월별 종가 시계열 동시 자동 수집)
             if price_fetched is None:
                 try:
-                    yf_url = f"https://query1.finance.yahoo.com/v8/finance/chart/{code}.KS?interval=1d&range=1d"
+                    yf_url = f"https://query1.finance.yahoo.com/v8/finance/chart/{code}.KS?interval=1mo&range=5y"
                     req = urllib.request.Request(yf_url, headers={
                         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
                         "Accept": "application/json"
@@ -509,11 +509,22 @@ class LiveDataSynchronizer:
                     with urllib.request.urlopen(req, timeout=4) as response:
                         if response.status == 200:
                             data = json.loads(response.read().decode('utf-8'))
-                            meta = data.get("chart", {}).get("result", [{}])[0].get("meta", {})
+                            result_obj = data.get("chart", {}).get("result", [{}])[0]
+                            meta = result_obj.get("meta", {})
                             cur_p = meta.get("regularMarketPrice")
                             if cur_p and float(cur_p) > 0:
                                 price_fetched = float(cur_p)
                                 provider_source = "Yahoo Finance (KRX 실시간)"
+                            # 5년 월별 종가 시계열 추출 및 백테스트 엔진 자동 적재
+                            timestamps = result_obj.get("timestamp", [])
+                            quotes = result_obj.get("indicators", {}).get("quote", [{}])[0].get("close", [])
+                            if timestamps and quotes:
+                                from src.engines.backtest.replay_engine import HistoricalReplayEngine
+                                bt_engine = HistoricalReplayEngine()
+                                for ts, cl_p in zip(timestamps, quotes):
+                                    if ts and cl_p and float(cl_p) > 0:
+                                        dt_s = datetime.fromtimestamp(int(ts), KST).strftime("%Y-%m-%d")
+                                        bt_engine.register_market_price(sector_id, dt_s, float(cl_p))
                 except Exception:
                     pass
 
@@ -590,6 +601,19 @@ class LiveDataSynchronizer:
                 "status": status_label,
                 "name": name
             }
+
+        # 각 종목의 실시간 종합 적합도 점수 및 등급도 함께 반환하여 프론트엔드에서 즉시 갱신되도록 지원
+        try:
+            from src.engines.portfolio.suitability_evaluator import DynamicSuitabilityEvaluator
+            for rec in DynamicSuitabilityEvaluator.evaluate_all():
+                if rec.stock_code in res:
+                    res[rec.stock_code]["suitability_score"] = rec.suitability_score
+                    res[rec.stock_code]["suitability_grade"] = rec.suitability_grade
+                    res[rec.stock_code]["action_status"] = rec.action_status
+                    res[rec.stock_code]["expected_return_str"] = rec.expected_return_str
+                    res[rec.stock_code]["per"] = rec.live_per
+        except Exception:
+            pass
 
         return res
 
